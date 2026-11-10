@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+# Datos del DWH y credenciales nunca al repositorio
+Envir/
+*.ENV
