@@ -124,6 +124,30 @@ export default function Resumen() {
 
   const maxRango = Math.max(...k.rangos.map((r) => r.n), 1)
 
+  // Mediana y P90 aproximados desde los rangos (acordado con Riesgos). Si el percentil cae por encima de 24 HH,
+  // no se inventa un número: se muestra "> 24 HH".
+  const limites = [8, 16, 24]
+  const rangosN = k.rangos.map((r) => r.n)
+  const totalRangos = rangosN.reduce((a, b) => a + b, 0)
+  function percentil(q: number): number | null {
+    const objetivo = q * totalRangos
+    let acum = 0
+    let lo = 0
+    for (let i = 0; i < rangosN.length; i++) {
+      const n = rangosN[i]
+      const hi = i < limites.length ? limites[i] : Infinity
+      if (n > 0 && acum + n >= objetivo) {
+        if (hi === Infinity) return null
+        return lo + ((objetivo - acum) / n) * (hi - lo)
+      }
+      acum += n
+      lo = hi
+    }
+    return null
+  }
+  const medianaAprox = totalRangos ? percentil(0.5) : null
+  const p90Aprox = totalRangos ? percentil(0.9) : null
+
   // Preguntas y respuestas (mismo criterio que model.respuestas del tablero original)
   const suma = (fn: (f: Fila) => number) => filtradas.reduce((acc, f) => acc + fn(f), 0)
   const noFormalizadas = suma((f) => (f.resultado_final === 'EXITOSA' ? 0 : f.creadas))
@@ -176,6 +200,8 @@ export default function Resumen() {
         <div className="kpi"><span>Formalizadas</span><strong>{fmtNum(k.formalizadas)}</strong></div>
         <div className="kpi"><span>Conversión</span><strong>{fmtPct(k.conversion)}</strong></div>
         <div className="kpi"><span>Promedio HH a formalizar</span><strong>{fmtHH(k.promedioHH)}</strong></div>
+        <div className="kpi"><span>Mediana hábil (aprox.)</span><strong>{medianaAprox == null ? `> ${limites[2]} HH` : `${medianaAprox.toFixed(1)} HH`}</strong><small>estimada por rangos</small></div>
+        <div className="kpi"><span>P90, el 10% más lento (aprox.)</span><strong>{p90Aprox == null ? `> ${limites[2]} HH` : `${p90Aprox.toFixed(1)} HH`}</strong><small>estimado por rangos</small></div>
         <div className="kpi"><span>Dentro del SLA ({SLA_HH} HH)</span><strong>{fmtPct(k.dentroSLA)}</strong></div>
       </div>
 
