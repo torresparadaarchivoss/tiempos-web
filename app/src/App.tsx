@@ -14,6 +14,14 @@ import Parametros from './pages/Parametros'
 import ErrorBoundary from './components/ErrorBoundary'
 import Comparativo from './pages/Comparativo'
 
+// Solo el administrador ve Parámetros; los visualizadores son redirigidos al Resumen
+function SoloAdmin({ children }: { children: ReactNode }) {
+  const { perfil, cargando } = useAuth()
+  if (cargando) return <p className="cargando">Cargando…</p>
+  if (!perfil?.es_admin) return <Navigate to="/resumen" replace />
+  return children
+}
+
 function Protegido({ children }: { children: ReactNode }) {
   const { session, cargando } = useAuth()
   if (cargando) return <p className="cargando">Cargando…</p>
@@ -54,7 +62,7 @@ export default function App() {
             <Route path="/consulta" element={<Consulta />} />
             <Route path="/equipo" element={<Equipo />} />
             <Route path="/comparativo" element={<Comparativo />} />
-            <Route path="/parametros" element={<Parametros />} />
+            <Route path="/parametros" element={<SoloAdmin><Parametros /></SoloAdmin>} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

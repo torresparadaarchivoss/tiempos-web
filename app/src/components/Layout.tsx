@@ -66,7 +66,7 @@ export default function Layout() {
         </label>
 
         <nav className="menu-secciones">
-          {SECCIONES.map((s) =>
+          {SECCIONES.filter((s) => s.to !== '/parametros' || perfil?.es_admin).map((s) =>
             s.listo ? (
               <NavLink key={s.to} to={s.to}>{s.titulo}</NavLink>
             ) : (
