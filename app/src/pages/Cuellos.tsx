@@ -26,6 +26,23 @@ export default function Cuellos({ pais }: { pais: { id_pais: number; nombre: str
   const [datos, setDatos] = useState<Resultado | null>(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tipos, setTipos] = useState<string[]>([])
+
+  // Opciones del filtro de tipo: los tipos reales del país (tabla agregada, pequeña)
+  useEffect(() => {
+    let vivo = true
+    sb.from('resumen_mensual')
+      .select('tipo_solicitud')
+      .eq('id_pais', pais.id_pais)
+      .then(({ data }) => {
+        if (!vivo || !data) return
+        const unicos = [...new Set(data.map((r: { tipo_solicitud: string }) => r.tipo_solicitud))].sort()
+        setTipos(unicos)
+      })
+    return () => {
+      vivo = false
+    }
+  }, [pais.id_pais])
 
   useEffect(() => {
     let vivo = true
@@ -69,7 +86,12 @@ export default function Cuellos({ pais }: { pais: { id_pais: number; nombre: str
         </label>
         <label>
           Tipo de solicitud
-          <input type="text" value={tipo} placeholder="Todos" onChange={(e) => setTipo(e.target.value.trim())} />
+          <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+            <option value="">Todos</option>
+            {tipos.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
         </label>
       </div>
 
