@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
 
 // Página "Cuellos y reprocesos". Los cálculos se hacen en la base (función public.cuellos).
@@ -14,7 +15,8 @@ type Resultado = {
 const fmtPct = (x: number | null | undefined) => (x == null || Number.isNaN(x) ? '—' : `${(x * 100).toFixed(1)}%`)
 const fmtNum = (n: number) => n.toLocaleString('es-CR')
 
-export default function Cuellos({ pais }: { pais: { id_pais: number; nombre: string } }) {
+export default function Cuellos() {
+  const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
   const hoy = new Date()
   const hace3 = new Date(hoy)
   hace3.setMonth(hoy.getMonth() - 3)

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
 
 // Fila agregada de public.resumen_mensual (solo cifras, sin personas ni solicitudes)
@@ -27,7 +28,8 @@ const fmtHH = (x: number) => (Number.isFinite(x) ? `${x.toFixed(1)} HH` : '—')
 const etiquetaMes = (iso: string) =>
   new Date(iso + 'T00:00:00').toLocaleDateString('es-CR', { month: 'short', year: 'numeric' })
 
-export default function Resumen({ pais }: { pais: Pais }) {
+export default function Resumen() {
+  const { pais } = useOutletContext<{ pais: Pais }>()
   const [filas, setFilas] = useState<Fila[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -4,7 +4,8 @@ import { AuthProvider, useAuth } from './lib/auth'
 import { configuracionLista } from './lib/supabase'
 import Layout from './components/Layout'
 import Login from './pages/Login'
-import Tablero from './pages/Tablero'
+import Resumen from './pages/Resumen'
+import Cuellos from './pages/Cuellos'
 
 function Protegido({ children }: { children: ReactNode }) {
   const { session, cargando } = useAuth()
@@ -36,7 +37,9 @@ export default function App() {
               </Protegido>
             }
           >
-            <Route path="/" element={<Tablero />} />
+            <Route path="/" element={<Navigate to="/resumen" replace />} />
+            <Route path="/resumen" element={<Resumen />} />
+            <Route path="/cuellos" element={<Cuellos />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
