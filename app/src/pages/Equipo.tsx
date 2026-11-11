@@ -23,7 +23,7 @@ const nf = (n: number) => n.toLocaleString('es-CR')
 const DIM_TITULO: Record<string, string> = { estado: 'estado', usuario: 'usuario', rol: 'rol' }
 
 export default function Equipo() {
-  const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
+  const { pais, rolesDac } = useOutletContext<{ pais: { id_pais: number; nombre: string }; rolesDac: string[] }>()
   const hoy = new Date()
   const hace3 = new Date(hoy)
   hace3.setMonth(hoy.getMonth() - 3)
@@ -59,7 +59,7 @@ export default function Equipo() {
       p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta,
       p_tipos: tipo ? [tipo] : null, p_canales: null, p_resultados: ['EXITOSA'],
       p_roles: rolesProd, p_roles_resp: rolesResp, p_asig: asig, p_habil: habil, p_dim: dim,
-      p_roles_dac: ['DAC'],
+      p_roles_dac: rolesDac,
     }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo calcular: ' + err.message)
@@ -67,7 +67,7 @@ export default function Equipo() {
       setCargando(false)
     })
     return () => { vivo = false }
-  }, [pais.id_pais, desde, hasta, tipo, asig, habil, dim, rolesProd, rolesResp])
+  }, [pais.id_pais, desde, hasta, tipo, asig, habil, dim, rolesProd, rolesResp, rolesDac])
 
   if (error) return <p className="error">{error}</p>
 

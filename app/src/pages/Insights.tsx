@@ -44,7 +44,7 @@ function Barras({ items, max }: { items: Grupo[]; max: number }) {
 }
 
 export default function Insights() {
-  const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
+  const { pais, sla } = useOutletContext<{ pais: { id_pais: number; nombre: string }; sla: number }>()
   const hoy = new Date()
   const hace3 = new Date(hoy)
   hace3.setMonth(hoy.getMonth() - 3)
@@ -76,7 +76,7 @@ export default function Insights() {
     setError(null)
     sb.rpc('insights', {
       p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta,
-      p_tipos: tipo ? [tipo] : null, p_canales: null, p_resultados: ['EXITOSA'], p_dimension: dimension,
+      p_tipos: tipo ? [tipo] : null, p_canales: null, p_resultados: ['EXITOSA'], p_dimension: dimension, p_sla: sla,
     }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo calcular: ' + err.message)
@@ -86,7 +86,7 @@ export default function Insights() {
     return () => {
       vivo = false
     }
-  }, [pais.id_pais, desde, hasta, tipo, dimension])
+  }, [pais.id_pais, desde, hasta, tipo, dimension, sla])
 
   if (error) return <p className="error">{error}</p>
 

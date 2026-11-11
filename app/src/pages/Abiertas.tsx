@@ -18,7 +18,7 @@ const RES = ['EN_PROCESO', 'ESTANCADA', 'SOLO_UN_ESTADO']
 const fmtFecha = (s: string) => (s ? new Date(s).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—')
 
 export default function Abiertas() {
-  const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
+  const { pais, sla } = useOutletContext<{ pais: { id_pais: number; nombre: string }; sla: number }>()
   const hoy = new Date()
   const hace3 = new Date(hoy)
   hace3.setMonth(hoy.getMonth() - 3)
@@ -50,7 +50,7 @@ export default function Abiertas() {
     setError(null)
     sb.rpc('abiertas', {
       p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta,
-      p_tipos: tipo ? [tipo] : null, p_canales: null, p_todo: todo, p_sla: 24,
+      p_tipos: tipo ? [tipo] : null, p_canales: null, p_todo: todo, p_sla: sla,
     }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo calcular: ' + err.message)
@@ -58,7 +58,7 @@ export default function Abiertas() {
       setCargando(false)
     })
     return () => { vivo = false }
-  }, [pais.id_pais, desde, hasta, todo, tipo])
+  }, [pais.id_pais, desde, hasta, todo, tipo, sla])
 
   if (error) return <p className="error">{error}</p>
 

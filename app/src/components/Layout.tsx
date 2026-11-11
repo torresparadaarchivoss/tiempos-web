@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { sb } from '../lib/supabase'
 
 const logo = `${import.meta.env.BASE_URL}brand/logo_claro.png`
 
@@ -19,6 +20,22 @@ export default function Layout() {
   const { perfil, paises, salir } = useAuth()
   const [elegido, setElegido] = useState<number | null>(null)
   const pais = paises.find((p) => p.id_pais === elegido) ?? paises[0]
+  // SLA y roles DAC del país, tomados de Parámetros (valores por defecto mientras carga)
+  const [params, setParams] = useState<{ sla: number; rolesDac: string[] }>({ sla: 24, rolesDac: ['DAC'] })
+  const paisId = pais?.id_pais
+  useEffect(() => {
+    if (paisId == null) return
+    let vivo = true
+    sb.from('parametro_pais').select('clave, valor').eq('id_pais', paisId).then(({ data }) => {
+      if (!vivo || !data) return
+      const m = Object.fromEntries(data.map((x: { clave: string; valor: string }) => [x.clave, x.valor]))
+      setParams({
+        sla: Number(m.SLA_HH ?? 24),
+        rolesDac: String(m.ROLES_DAC ?? 'DAC').split(',').map((r) => r.trim()).filter(Boolean),
+      })
+    })
+    return () => { vivo = false }
+  }, [paisId])
 
   return (
     <div className="app">
@@ -63,7 +80,7 @@ export default function Layout() {
             <p>Tu cuenta todavía no tiene acceso a ningún país. Pedí a un administrador que te lo asigne.</p>
           </div>
         ) : (
-          <Outlet context={{ pais }} />
+          <Outlet context={{ pais, sla: params.sla, rolesDac: params.rolesDac }} />
         )}
       </main>
     </div>

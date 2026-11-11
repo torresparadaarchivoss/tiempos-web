@@ -20,7 +20,7 @@ const fmtFecha = (s: string | null) => (s ? new Date(s).toLocaleString('es-CR', 
 const fmtH = (h: number | null) => (h == null ? '—' : `${h.toFixed(1)} HH`)
 
 export default function Consulta() {
-  const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
+  const { pais, rolesDac } = useOutletContext<{ pais: { id_pais: number; nombre: string }; rolesDac: string[] }>()
   const [texto, setTexto] = useState('')
   const [numero, setNumero] = useState<number | null>(null)
   const [dato, setDato] = useState<Dato | null>(null)
@@ -31,14 +31,14 @@ export default function Consulta() {
     let vivo = true
     setCargando(true)
     setError(null)
-    sb.rpc('consulta', { p_pais: pais.id_pais, p_solicitud: numero }).then(({ data, error: err }) => {
+    sb.rpc('consulta', { p_pais: pais.id_pais, p_solicitud: numero, p_roles_dac: rolesDac }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo consultar: ' + err.message)
       else setDato(data as Dato)
       setCargando(false)
     })
     return () => { vivo = false }
-  }, [pais.id_pais, numero])
+  }, [pais.id_pais, numero, rolesDac])
 
   function buscar() {
     const n = Number(texto.trim())
