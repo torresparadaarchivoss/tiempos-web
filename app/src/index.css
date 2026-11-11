@@ -82,6 +82,12 @@ label { display: block; font-weight: 600; margin-bottom: .9rem; color: var(--nav
 .kpi small { color: var(--gris); font-size: .78rem; }
 input[type="date"], input[type="text"] { font: inherit; padding: .5rem .6rem; border: 1px solid var(--borde); border-radius: 8px; background: #fff; margin-top: .25rem; width: 100%; }
 
+/* Equipo y DAC */
+.seccion { color: var(--navy); font: 800 1.2rem var(--tit); margin: 1.2rem 0 .2rem; }
+.grupo-roles { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.etiqueta-roles { font-weight: 700; color: var(--navy); margin-right: .4rem; font-size: .9rem; }
+.grupo-roles .casilla { margin-top: 0 !important; }
+
 /* Tablas de detalle */
 .tabla-scroll { overflow: auto; max-height: 520px; }
 .tarjeta-seccion table td, .tarjeta-seccion table th { white-space: nowrap; }

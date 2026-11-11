@@ -10,7 +10,7 @@ const SECCIONES = [
   { to: '/insights', titulo: 'Insights', listo: true },
   { to: '/cuellos', titulo: 'Cuellos y reprocesos', listo: true },
   { to: '/abiertas', titulo: 'Abiertas y posibles errores', listo: true },
-  { to: '/equipo', titulo: 'Equipo y DAC', listo: false },
+  { to: '/equipo', titulo: 'Equipo y DAC', listo: true },
   { to: '/consulta', titulo: 'Consulta por solicitud', listo: true },
   { to: '/parametros', titulo: 'Parámetros', listo: false },
 ]

@@ -9,6 +9,7 @@ import Cuellos from './pages/Cuellos'
 import Insights from './pages/Insights'
 import Abiertas from './pages/Abiertas'
 import Consulta from './pages/Consulta'
+import Equipo from './pages/Equipo'
 
 function Protegido({ children }: { children: ReactNode }) {
   const { session, cargando } = useAuth()
@@ -46,6 +47,7 @@ export default function App() {
             <Route path="/insights" element={<Insights />} />
             <Route path="/abiertas" element={<Abiertas />} />
             <Route path="/consulta" element={<Consulta />} />
+            <Route path="/equipo" element={<Equipo />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
