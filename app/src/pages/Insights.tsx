@@ -110,8 +110,8 @@ export default function Insights() {
       <Cabecera kicker="Insights" titulo="¿Qué acelera y qué frena una formalización?" sub="Qué explica el tiempo a formalizar, por tipo, canal, día y retrocesos." pose="prestamito_pensando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => e.target.value && setDesde(e.target.value)} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => e.target.value && setHasta(e.target.value)} /></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
         <label>Resultado<select value={resultado} onChange={(e) => setResultado(e.target.value)}><option value="EXITOSA">Formalizadas</option><option value="TODOS">Todos</option><option value="RECHAZADA">Rechazadas</option><option value="DESERCION">Desistidas</option></select></label>

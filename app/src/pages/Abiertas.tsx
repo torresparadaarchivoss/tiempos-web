@@ -94,8 +94,8 @@ export default function Abiertas() {
       <Cabecera kicker="Abiertas y posibles errores" titulo="Solicitudes que esperan nuestro apoyo" sub="Solicitudes que siguen abiertas: en proceso, estancadas o con un solo estado. Las alertas señalan casos a revisar." pose="prestamito_senalando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" lang="es-CR" value={desde} disabled={todo} onChange={(e) => setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" lang="es-CR" value={hasta} disabled={todo} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} disabled={todo} onChange={(e) => e.target.value && setDesde(e.target.value)} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} disabled={todo} onChange={(e) => e.target.value && setHasta(e.target.value)} /></label>
         <label className="casilla"><input type="checkbox" checked={todo} onChange={(e) => setTodo(e.target.checked)} /> Todo el periodo cargado</label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>

@@ -79,8 +79,8 @@ export default function Equipo() {
       <Cabecera kicker="Equipo y DAC" titulo="El equipo que hace posible cada formalización" sub={`Periodo del ${fechaEs(desde)} al ${fechaEs(hasta)}. Productividad por persona y gestión DAC; excluye usuarios inactivos y los estados posteriores a aprobado informa.`} pose="prestamito_equipo_celebrando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => e.target.value && setDesde(e.target.value)} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => e.target.value && setHasta(e.target.value)} /></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
