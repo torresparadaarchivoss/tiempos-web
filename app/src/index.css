@@ -82,6 +82,10 @@ label { display: block; font-weight: 600; margin-bottom: .9rem; color: var(--nav
 .kpi small { color: var(--gris); font-size: .78rem; }
 input[type="date"], input[type="text"] { font: inherit; padding: .5rem .6rem; border: 1px solid var(--borde); border-radius: 8px; background: #fff; margin-top: .25rem; width: 100%; }
 
+/* Parámetros */
+.aviso-guardado { position: fixed; top: 1rem; right: 1rem; background: var(--navy); color: #fff; padding: .7rem 1rem; border-radius: 10px; font-weight: 700; z-index: 50; box-shadow: 0 4px 14px rgba(6,37,91,.25); }
+.tarjeta-seccion input[type="number"] { width: 110px; }
+
 /* Equipo y DAC */
 .seccion { color: var(--navy); font: 800 1.2rem var(--tit); margin: 1.2rem 0 .2rem; }
 .grupo-roles { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }

@@ -12,7 +12,7 @@ const SECCIONES = [
   { to: '/abiertas', titulo: 'Abiertas y posibles errores', listo: true },
   { to: '/equipo', titulo: 'Equipo y DAC', listo: true },
   { to: '/consulta', titulo: 'Consulta por solicitud', listo: true },
-  { to: '/parametros', titulo: 'Parámetros', listo: false },
+  { to: '/parametros', titulo: 'Parámetros', listo: true },
 ]
 
 export default function Layout() {
