@@ -12,6 +12,7 @@ import Consulta from './pages/Consulta'
 import Equipo from './pages/Equipo'
 import Parametros from './pages/Parametros'
 import ErrorBoundary from './components/ErrorBoundary'
+import Comparativo from './pages/Comparativo'
 
 function Protegido({ children }: { children: ReactNode }) {
   const { session, cargando } = useAuth()
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/abiertas" element={<Abiertas />} />
             <Route path="/consulta" element={<Consulta />} />
             <Route path="/equipo" element={<Equipo />} />
+            <Route path="/comparativo" element={<Comparativo />} />
             <Route path="/parametros" element={<Parametros />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

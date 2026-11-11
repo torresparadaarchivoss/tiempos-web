@@ -7,6 +7,7 @@ const logo = `${import.meta.env.BASE_URL}brand/logo_claro.png`
 
 // Secciones del tablero original. Las marcadas "pronto" aún no están portadas.
 const SECCIONES = [
+  { to: '/comparativo', titulo: 'Comparativo regional', listo: true },
   { to: '/resumen', titulo: 'Resumen', listo: true },
   { to: '/insights', titulo: 'Insights', listo: true },
   { to: '/cuellos', titulo: 'Cuellos y reprocesos', listo: true },
