@@ -101,3 +101,26 @@ end;
 $$;
 
 revoke execute on function public.aplicar_ventana(date) from anon, authenticated;
+
+-- PASO 1 (antes de cargar): libera el espacio del mes que sale de la ventana.
+-- Borra solicitudes anteriores a p_desde y sus movimientos, en todos los países.
+create or replace function public.liberar_mes_antiguo(p_desde date)
+returns text
+language plpgsql
+security definer
+set search_path = public
+set statement_timeout = '600s'
+as $$
+declare n_sol int; n_cic int;
+begin
+  delete from public.ciclo_estado c
+  using public.solicitud s
+  where s.id_pais = c.id_pais and s.solicitud = c.solicitud and s.fecha_creacion < p_desde;
+  get diagnostics n_cic = row_count;
+  delete from public.solicitud where fecha_creacion < p_desde;
+  get diagnostics n_sol = row_count;
+  delete from public.resumen_mensual where mes < date_trunc('month', p_desde)::date;
+  return format('Liberado antes de %s: solicitudes=%s, movimientos=%s', p_desde, n_sol, n_cic);
+end;
+$$;
+revoke execute on function public.liberar_mes_antiguo(date) from anon, authenticated;
