@@ -49,12 +49,11 @@ function Barras({ items, titulo }: { items: Grupo[]; titulo: string }) {
 }
 
 export default function Insights() {
-  const { pais, sla } = useOutletContext<{ pais: { id_pais: number; nombre: string }; sla: number }>()
+  const { pais, sla, resultado } = useOutletContext<{ pais: { id_pais: number; nombre: string }; sla: number; resultado: 'EXITOSA' | 'TODOS' }>()
   const [desde, setDesde] = useState(periodoPorDefecto().desde)
   const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
   const [tipo, setTipo] = useState('')
   const [canal, setCanal] = useState('')
-  const [resultado, setResultado] = useState('EXITOSA')
   const [dimension, setDimension] = useState<'promotor' | 'sucursal' | 'usuario'>('promotor')
   const [dato, setDato] = useState<Dato | null>(null)
   const [cuart, setCuart] = useState<{ sin: Cuart | null; con: Cuart | null } | null>(null)
@@ -81,7 +80,7 @@ export default function Insights() {
     const args = {
       p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta,
       p_tipos: tipo ? [tipo] : null, p_canales: canal ? [canal] : null,
-      p_resultados: resultado === 'TODOS' ? null : [resultado],
+      p_resultados: resultado === 'TODOS' ? null : ['EXITOSA'],
     }
     Promise.all([
       sb.rpc('insights', { ...args, p_dimension: dimension, p_sla: sla }),
@@ -114,7 +113,6 @@ export default function Insights() {
         <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => e.target.value && setHasta(e.target.value)} /></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
-        <label>Resultado<select value={resultado} onChange={(e) => setResultado(e.target.value)}><option value="EXITOSA">Formalizadas</option><option value="TODOS">Todos</option><option value="RECHAZADA">Rechazadas</option><option value="DESERCION">Desistidas</option></select></label>
       </div>
 
       {cargando && <p className="cargando">Calculando Insights de {pais.nombre}…</p>}

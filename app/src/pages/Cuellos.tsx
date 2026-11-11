@@ -18,7 +18,7 @@ const fmtPct = (x: number | null | undefined) => (x == null || Number.isNaN(x) ?
 const fmtNum = (n: number) => n.toLocaleString('es-CR')
 
 export default function Cuellos() {
-  const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
+  const { pais, resultado } = useOutletContext<{ pais: { id_pais: number; nombre: string }; resultado: 'EXITOSA' | 'TODOS' }>()
   const [desde, setDesde] = useState(periodoPorDefecto().desde)
   const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
   const [tipo, setTipo] = useState('')
@@ -46,7 +46,7 @@ export default function Cuellos() {
     setError(null)
     sb.rpc('cuellos', {
       p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta,
-      p_tipos: tipo ? [tipo] : null, p_canales: canal ? [canal] : null, p_resultados: ['EXITOSA'],
+      p_tipos: tipo ? [tipo] : null, p_canales: canal ? [canal] : null, p_resultados: resultado === 'TODOS' ? null : ['EXITOSA'],
     }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo calcular: ' + err.message)
@@ -54,7 +54,7 @@ export default function Cuellos() {
       setCargando(false)
     })
     return () => { vivo = false }
-  }, [pais.id_pais, desde, hasta, tipo, canal])
+  }, [pais.id_pais, desde, hasta, tipo, canal, resultado])
 
   if (error) return <p className="error">{error}</p>
 

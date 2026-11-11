@@ -19,6 +19,7 @@ const SECCIONES = [
 export default function Layout() {
   const { perfil, paises, salir } = useAuth()
   const [elegido, setElegido] = useState<number | null>(null)
+  const [resultado, setResultado] = useState<'EXITOSA' | 'TODOS'>('EXITOSA')
   const pais = paises.find((p) => p.id_pais === elegido) ?? paises[0]
   // SLA y roles DAC del país, tomados de Parámetros (valores por defecto mientras carga)
   const [params, setParams] = useState<{ sla: number; rolesDac: string[] }>({ sla: 24, rolesDac: ['DAC'] })
@@ -55,6 +56,14 @@ export default function Layout() {
           </label>
         )}
 
+        <label className="menu-pais">
+          Resultado
+          <select value={resultado} onChange={(e) => setResultado(e.target.value as 'EXITOSA' | 'TODOS')}>
+            <option value="EXITOSA">Formalizadas (exitosas)</option>
+            <option value="TODOS">Todos los resultados</option>
+          </select>
+        </label>
+
         <nav className="menu-secciones">
           {SECCIONES.map((s) =>
             s.listo ? (
@@ -80,7 +89,7 @@ export default function Layout() {
             <p>Tu cuenta todavía no tiene acceso a ningún país. Pedí a un administrador que te lo asigne.</p>
           </div>
         ) : (
-          <Outlet context={{ pais, sla: params.sla, rolesDac: params.rolesDac }} />
+          <Outlet context={{ pais, sla: params.sla, rolesDac: params.rolesDac, resultado }} />
         )}
       </main>
     </div>
