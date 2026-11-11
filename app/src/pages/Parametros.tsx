@@ -60,7 +60,7 @@ export default function Parametros() {
       { id_pais: pais.id_pais, clave: 'SLA_HH', valor: sla },
       { id_pais: pais.id_pais, clave: 'ROLES_DAC', valor: rolesDac },
     ])
-    avisar(error ? 'No se pudieron guardar las reglas: ' + error.message : 'Reglas guardadas', !error)
+    avisar(error ? 'No se pudieron guardar las reglas: ' + error.message : 'Reglas guardadas', !error); if (!error) setTimeout(() => window.location.reload(), 1200)
   }
 
   async function agregarAsueto() {
