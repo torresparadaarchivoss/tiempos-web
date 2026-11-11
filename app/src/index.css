@@ -168,3 +168,5 @@ input[type="date"], input[type="text"] { font: inherit; padding: .5rem .6rem; bo
 /* Gráficos y detalle */
 .barra-mini { display: inline-block; height: 8px; border-radius: 4px; background: var(--acc2, #00A4E0); vertical-align: middle; margin-right: .3rem; }
 .fila-sel td { background: #eef6ec; }
+
+.error-detalle { white-space: pre-wrap; text-align: left; background: #fff; border: 1px solid var(--borde); border-radius: 8px; padding: .8rem; color: #8a1d24; }

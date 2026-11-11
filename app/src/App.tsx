@@ -11,6 +11,7 @@ import Abiertas from './pages/Abiertas'
 import Consulta from './pages/Consulta'
 import Equipo from './pages/Equipo'
 import Parametros from './pages/Parametros'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function Protegido({ children }: { children: ReactNode }) {
   const { session, cargando } = useAuth()
@@ -38,7 +39,9 @@ export default function App() {
           <Route
             element={
               <Protegido>
-                <Layout />
+                <ErrorBoundary>
+                  <Layout />
+                </ErrorBoundary>
               </Protegido>
             }
           >
