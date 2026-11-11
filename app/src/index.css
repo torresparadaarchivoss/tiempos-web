@@ -82,6 +82,18 @@ label { display: block; font-weight: 600; margin-bottom: .9rem; color: var(--nav
 .kpi small { color: var(--gris); font-size: .78rem; }
 input[type="date"], input[type="text"] { font: inherit; padding: .5rem .6rem; border: 1px solid var(--borde); border-radius: 8px; background: #fff; margin-top: .25rem; width: 100%; }
 
+/* Tablas de detalle */
+.tabla-scroll { overflow: auto; max-height: 520px; }
+.tarjeta-seccion table td, .tarjeta-seccion table th { white-space: nowrap; }
+.celda-alerta { white-space: normal !important; min-width: 260px; color: #8a1d24; font-weight: 600; }
+.fila-alerta td:first-child { border-left: 4px solid var(--rojo); }
+.fila-fuera td { color: var(--gris); }
+.fila-enlace { cursor: pointer; }
+.fila-enlace:hover td { background: #eef6ec; }
+.casilla { display: flex !important; align-items: center; gap: .4rem; margin-top: 1.2rem !important; }
+.casilla input { width: auto; }
+.mapa td, .mapa th { text-align: center; padding: .3rem; font-size: .8rem; }
+
 /* Resumen */
 .resumen { margin-top: 1rem; display: grid; gap: 1rem; }
 .filtros-resumen { display: flex; flex-wrap: wrap; gap: 1rem; background: #fff; border: 1px solid var(--borde); border-radius: 14px; padding: .8rem 1rem; }
