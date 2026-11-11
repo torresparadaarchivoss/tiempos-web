@@ -58,7 +58,7 @@ export default function Equipo() {
     setError(null)
     sb.rpc('equipo', {
       p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta,
-      p_tipos: tipo ? [tipo] : null, p_canales: canal ? [canal] : null, p_resultados: ['EXITOSA'],
+      p_tipos: tipo ? [tipo] : null, p_canales: canal ? [canal] : null, p_resultados: null,
       p_roles: rolesProd, p_roles_resp: rolesResp, p_asig: asig, p_habil: habil, p_dim: dim, p_roles_dac: rolesDac,
     }).then(({ data, error: err }) => {
       if (!vivo) return
