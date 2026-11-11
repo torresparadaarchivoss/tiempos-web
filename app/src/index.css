@@ -68,6 +68,14 @@ label { display: block; font-weight: 600; margin-bottom: .9rem; color: var(--nav
 .filtro-select { margin: 0; min-width: 220px; }
 .filtro-select select { font: inherit; width: 100%; padding: .55rem .7rem; border: 1px solid var(--borde); border-radius: 8px; background: #fff; margin-top: .25rem; }
 
+/* Pestañas de sección */
+.pestanas { display: flex; flex-wrap: wrap; gap: .5rem; margin: .8rem 0 .4rem; }
+.pestana { background: #fff; color: var(--navy); border: 2px solid var(--borde); padding: .45rem 1rem; }
+.pestana.activa { background: var(--navy); border-color: var(--navy); color: #fff; }
+.kpi-texto { font-size: 1.2rem !important; line-height: 1.2; }
+.kpi small { color: var(--gris); font-size: .78rem; }
+input[type="date"], input[type="text"] { font: inherit; padding: .5rem .6rem; border: 1px solid var(--borde); border-radius: 8px; background: #fff; margin-top: .25rem; width: 100%; }
+
 /* Resumen */
 .resumen { margin-top: 1rem; display: grid; gap: 1rem; }
 .filtros-resumen { display: flex; flex-wrap: wrap; gap: 1rem; background: #fff; border: 1px solid var(--borde); border-radius: 14px; padding: .8rem 1rem; }
