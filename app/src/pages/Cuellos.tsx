@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { periodoPorDefecto } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Cuellos y reprocesos. Cálculos en la base (función cuellos).
@@ -18,13 +19,8 @@ const fmtNum = (n: number) => n.toLocaleString('es-CR')
 
 export default function Cuellos() {
   const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
-  const hoy = new Date()
-  const hace3 = new Date(hoy)
-  hace3.setMonth(hoy.getMonth() - 3)
-  const iso = (d: Date) => d.toISOString().slice(0, 10)
-
-  const [desde, setDesde] = useState(iso(hace3))
-  const [hasta, setHasta] = useState(iso(hoy))
+  const [desde, setDesde] = useState(periodoPorDefecto().desde)
+  const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
   const [tipo, setTipo] = useState('')
   const [canal, setCanal] = useState('')
   const [datos, setDatos] = useState<Resultado | null>(null)
@@ -70,8 +66,8 @@ export default function Cuellos() {
       <Cabecera kicker="Cuellos y reprocesos" titulo="Dónde se nos va el tiempo (y cómo recuperarlo)" sub="Dónde se va el tiempo hábil hasta la formalización. Los estados posteriores a aprobado informa quedan fuera del análisis." pose="prestamito_estrategia" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>

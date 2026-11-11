@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { periodoPorDefecto } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 import LeadTimeMes from '../components/LeadTimeMes'
 
@@ -49,13 +50,8 @@ function Barras({ items, titulo }: { items: Grupo[]; titulo: string }) {
 
 export default function Insights() {
   const { pais, sla } = useOutletContext<{ pais: { id_pais: number; nombre: string }; sla: number }>()
-  const hoy = new Date()
-  const hace3 = new Date(hoy)
-  hace3.setMonth(hoy.getMonth() - 3)
-  const iso = (d: Date) => d.toISOString().slice(0, 10)
-
-  const [desde, setDesde] = useState(iso(hace3))
-  const [hasta, setHasta] = useState(iso(hoy))
+  const [desde, setDesde] = useState(periodoPorDefecto().desde)
+  const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
   const [tipo, setTipo] = useState('')
   const [canal, setCanal] = useState('')
   const [resultado, setResultado] = useState('EXITOSA')
@@ -114,8 +110,8 @@ export default function Insights() {
       <Cabecera kicker="Insights" titulo="¿Qué acelera y qué frena una formalización?" sub="Qué explica el tiempo a formalizar, por tipo, canal, día y retrocesos." pose="prestamito_pensando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
         <label>Resultado<select value={resultado} onChange={(e) => setResultado(e.target.value)}><option value="EXITOSA">Formalizadas</option><option value="TODOS">Todos</option><option value="RECHAZADA">Rechazadas</option><option value="DESERCION">Desistidas</option></select></label>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { periodoPorDefecto } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Abiertas y posibles errores. Cálculos en la base (funciones abiertas y abiertas_graficos).
@@ -24,13 +25,8 @@ const fmtFecha = (s: string) => (s ? new Date(s).toLocaleString('es-CR', { dateS
 export default function Abiertas() {
   const { pais, sla } = useOutletContext<{ pais: { id_pais: number; nombre: string }; sla: number }>()
   const navigate = useNavigate()
-  const hoy = new Date()
-  const hace3 = new Date(hoy)
-  hace3.setMonth(hoy.getMonth() - 3)
-  const iso = (d: Date) => d.toISOString().slice(0, 10)
-
-  const [desde, setDesde] = useState(iso(hace3))
-  const [hasta, setHasta] = useState(iso(hoy))
+  const [desde, setDesde] = useState(periodoPorDefecto().desde)
+  const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
   const [todo, setTodo] = useState(false)
   const [tipo, setTipo] = useState('')
   const [canal, setCanal] = useState('')
@@ -98,8 +94,8 @@ export default function Abiertas() {
       <Cabecera kicker="Abiertas y posibles errores" titulo="Solicitudes que esperan nuestro apoyo" sub="Solicitudes que siguen abiertas: en proceso, estancadas o con un solo estado. Las alertas señalan casos a revisar." pose="prestamito_senalando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" value={desde} disabled={todo} onChange={(e) => setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" value={hasta} disabled={todo} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} disabled={todo} onChange={(e) => setDesde(e.target.value)} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} disabled={todo} onChange={(e) => setHasta(e.target.value)} /></label>
         <label className="casilla"><input type="checkbox" checked={todo} onChange={(e) => setTodo(e.target.checked)} /> Todo el periodo cargado</label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>

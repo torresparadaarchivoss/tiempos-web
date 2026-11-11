@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { periodoPorDefecto, fechaEs } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Equipo y DAC. Cálculos en la base (función equipo).
@@ -25,13 +26,8 @@ const nf = (n: number) => n.toLocaleString('es-CR')
 
 export default function Equipo() {
   const { pais, rolesDac } = useOutletContext<{ pais: { id_pais: number; nombre: string }; rolesDac: string[] }>()
-  const hoy = new Date()
-  const hace3 = new Date(hoy)
-  hace3.setMonth(hoy.getMonth() - 3)
-  const iso = (d: Date) => d.toISOString().slice(0, 10)
-
-  const [desde, setDesde] = useState(iso(hace3))
-  const [hasta, setHasta] = useState(iso(hoy))
+  const [desde, setDesde] = useState(periodoPorDefecto().desde)
+  const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
   const [tipo, setTipo] = useState('')
   const [canal, setCanal] = useState('')
   const [asig, setAsig] = useState<'atiende' | 'dejo'>('atiende')
@@ -80,11 +76,11 @@ export default function Equipo() {
 
   return (
     <div className="resumen">
-      <Cabecera kicker="Equipo y DAC" titulo="El equipo que hace posible cada formalización" sub="Productividad por persona y gestión DAC. Excluye usuarios inactivos y los estados posteriores a aprobado informa." pose="prestamito_equipo_celebrando" />
+      <Cabecera kicker="Equipo y DAC" titulo="El equipo que hace posible cada formalización" sub={`Periodo del ${fechaEs(desde)} al ${fechaEs(hasta)}. Productividad por persona y gestión DAC; excluye usuarios inactivos y los estados posteriores a aprobado informa.`} pose="prestamito_equipo_celebrando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
