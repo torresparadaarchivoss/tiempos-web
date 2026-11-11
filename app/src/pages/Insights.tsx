@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { Cabecera } from '../components/ui'
+import LeadTimeMes from '../components/LeadTimeMes'
+
 
 type Grupo = { grupo: string; formalizadas: number; mediana: number; p90: number; sla: number }
 type Ranking = { grupo: string; creadas: number; formalizadas: number; conversion: number; mediana: number; sla: number }
@@ -102,6 +105,7 @@ export default function Insights() {
 
   return (
     <div className="resumen">
+      <Cabecera kicker="Insights" titulo="¿Qué acelera y qué frena una formalización?" sub="Qué explica el tiempo a formalizar." pose="prestamito_pensando" />
       <div className="filtros-resumen">
         <label>Desde<input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
         <label>Hasta<input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>
@@ -207,6 +211,7 @@ export default function Insights() {
               </table>
             ) : <p className="sub">Sin grupos con suficientes formalizadas.</p>}
           </div>
+          <LeadTimeMes idPais={pais.id_pais} sla={sla} />
         </>
       )}
     </div>

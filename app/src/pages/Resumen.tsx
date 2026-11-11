@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { Cabecera } from '../components/ui'
+import LeadTimeMes from '../components/LeadTimeMes'
+
 
 // Fila agregada de public.resumen_mensual (solo cifras, sin personas ni solicitudes)
 type Fila = {
@@ -167,6 +170,7 @@ export default function Resumen() {
 
   return (
     <div className="resumen">
+      <Cabecera kicker="Resumen · Tiempos de formalización" titulo="Formalizar a tiempo también es Impactar Vidas" sub="Solicitudes creadas en el periodo seleccionado." pose="prestamito_corriendo" />
       <div className="filtros-resumen">
         <label>
           Desde
@@ -204,6 +208,8 @@ export default function Resumen() {
         <div className="kpi"><span>P90, el 10% más lento (aprox.)</span><strong>{p90Aprox == null ? `> ${limites[2]} HH` : `${p90Aprox.toFixed(1)} HH`}</strong><small>estimado por rangos</small></div>
         <div className="kpi"><span>Dentro del SLA ({SLA_HH} HH)</span><strong>{fmtPct(k.dentroSLA)}</strong></div>
       </div>
+
+      <LeadTimeMes idPais={pais.id_pais} sla={24} />
 
       <div className="preguntas">
         <h2>Preguntas y respuestas</h2>

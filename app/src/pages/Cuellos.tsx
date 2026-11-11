@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { Cabecera } from '../components/ui'
+
 
 // Página "Cuellos y reprocesos". Los cálculos se hacen en la base (función public.cuellos).
 type Estado = { estado: string; solicitudes: number; mediana: number; p90: number; horas: number; share: number }
@@ -77,6 +79,7 @@ export default function Cuellos() {
 
   return (
     <div className="resumen">
+      <Cabecera kicker="Cuellos y reprocesos" titulo="Dónde se nos va el tiempo (y cómo recuperarlo)" sub="Dónde se va el tiempo hábil hasta la formalización." pose="prestamito_estrategia" />
       <div className="filtros-resumen">
         <label>
           Desde

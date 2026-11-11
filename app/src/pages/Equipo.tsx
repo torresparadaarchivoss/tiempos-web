@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { Cabecera } from '../components/ui'
+
 
 type Prod = { usuario: string; solicitudes: number; por_dia: number }
 type Fila = {
@@ -76,6 +78,7 @@ export default function Equipo() {
 
   return (
     <div className="resumen">
+      <Cabecera kicker="Equipo y DAC" titulo="El equipo que hace posible cada formalización" sub="Productividad por persona y gestión DAC." pose="prestamito_equipo_celebrando" />
       <div className="filtros-resumen">
         <label>Desde<input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} /></label>
         <label>Hasta<input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} /></label>

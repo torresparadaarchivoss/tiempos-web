@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { Cabecera } from '../components/ui'
+
 
 // Parámetros: usuarios (canal, rol, activo), reglas (SLA y roles DAC) y asuetos por país.
 // Los cambios se guardan en Supabase; RLS solo permite hacerlos a los administradores del país.
@@ -84,6 +86,7 @@ export default function Parametros() {
 
   return (
     <div className="resumen">
+      <Cabecera kicker="Parámetros" titulo="Ajustá las reglas del tablero" sub="Usuarios, reglas y asuetos. Se guardan en la base." pose="prestamito_planos" />
       {mensaje && <div className="aviso-guardado">{mensaje}</div>}
 
       <div className="tarjeta-seccion">

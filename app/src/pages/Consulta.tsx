@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { Cabecera } from '../components/ui'
+
 
 type Sol = {
   solicitud: number; resultado: string; estado_final: string; tipo: string; promotor: string; sucursal: string
@@ -50,6 +52,7 @@ export default function Consulta() {
   const s = dato?.solicitud
   return (
     <div className="resumen">
+      <Cabecera kicker="Consulta por solicitud" titulo="La historia completa de cada solicitud" sub="Línea de tiempo de una solicitud." pose="prestamito_leyendo" />
       <div className="filtros-resumen">
         <label>
           Número de solicitud

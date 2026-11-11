@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { Cabecera } from '../components/ui'
+
 
 type Fila = {
   solicitud: number; resultado: string; estado_actual: string; alertas: string; tipo: string; canal: string
@@ -70,6 +72,7 @@ export default function Abiertas() {
 
   return (
     <div className="resumen">
+      <Cabecera kicker="Abiertas y posibles errores" titulo="Solicitudes que esperan nuestro apoyo" sub="Solicitudes que siguen abiertas y las alertas a revisar." pose="prestamito_senalando" />
       <div className="filtros-resumen">
         <label>Desde<input type="date" value={desde} disabled={todo} onChange={(e) => setDesde(e.target.value)} /></label>
         <label>Hasta<input type="date" value={hasta} disabled={todo} onChange={(e) => setHasta(e.target.value)} /></label>
