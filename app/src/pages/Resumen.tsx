@@ -124,6 +124,23 @@ export default function Resumen() {
 
   const maxRango = Math.max(...k.rangos.map((r) => r.n), 1)
 
+  // Preguntas y respuestas (mismo criterio que model.respuestas del tablero original)
+  const suma = (fn: (f: Fila) => number) => filtradas.reduce((acc, f) => acc + fn(f), 0)
+  const noFormalizadas = suma((f) => (f.resultado_final === 'EXITOSA' ? 0 : f.creadas))
+  const rechazadas = suma((f) => (f.resultado_final === 'RECHAZADA' ? f.creadas : 0))
+  const desisten = suma((f) => (f.resultado_final === 'DESERCION' ? f.creadas : 0))
+  const abiertas = suma((f) => (['EN_PROCESO', 'ESTANCADA', 'SOLO_UN_ESTADO'].includes(f.resultado_final) ? f.creadas : 0))
+  const pc = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : '—')
+  const respuestas: [string, string][] = [
+    [`¿Cumplimos el SLA de ${SLA_HH} horas hábiles?`,
+      `${fmtPct(k.dentroSLA)} de las formalizadas está dentro del SLA.`],
+    ['¿Qué pasa con las que no se formalizan?',
+      `De ${fmtNum(k.creadas)} solicitudes creadas, ${pc(k.formalizadas, k.creadas)} se formalizan, ` +
+      `${pc(rechazadas, k.creadas)} se rechazan, ${pc(desisten, k.creadas)} desisten y ${fmtNum(abiertas)} siguen abiertas.`],
+    ['¿Cuántas quedaron sin formalizar?',
+      `${fmtNum(noFormalizadas)} solicitudes no llegaron a formalizarse en el periodo.`],
+  ]
+
   return (
     <div className="resumen">
       <div className="filtros-resumen">
@@ -160,6 +177,15 @@ export default function Resumen() {
         <div className="kpi"><span>Conversión</span><strong>{fmtPct(k.conversion)}</strong></div>
         <div className="kpi"><span>Promedio HH a formalizar</span><strong>{fmtHH(k.promedioHH)}</strong></div>
         <div className="kpi"><span>Dentro del SLA ({SLA_HH} HH)</span><strong>{fmtPct(k.dentroSLA)}</strong></div>
+      </div>
+
+      <div className="preguntas">
+        <h2>Preguntas y respuestas</h2>
+        <div className="preguntas-grid">
+          {respuestas.map(([q, a]) => (
+            <div key={q} className="qa"><b>{q}</b>{a}</div>
+          ))}
+        </div>
       </div>
 
       <div className="grid-dos">
