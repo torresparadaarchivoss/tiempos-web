@@ -63,7 +63,17 @@ export default function Equipo() {
     }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo calcular: ' + err.message)
-      else setDato(data as Dato)
+      else if (data) {
+        // json_agg devuelve null cuando no hay filas: normalizamos a listas vacías
+        const d = data as Dato
+        setDato({
+          ...d,
+          prod_roles: d.prod_roles ?? [], prod_roles_sel: d.prod_roles_sel ?? [], prod_usuarios: d.prod_usuarios ?? [],
+          dac_usuarios: d.dac_usuarios ?? [],
+          resp_roles: d.resp_roles ?? [], resp_roles_sel: d.resp_roles_sel ?? [],
+          resp_tabla: d.resp_tabla ?? [], resp_distribucion: d.resp_distribucion ?? [],
+        })
+      } else setDato(null)
       setCargando(false)
     })
     return () => { vivo = false }
