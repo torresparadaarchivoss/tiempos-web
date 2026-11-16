@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { sb } from '../lib/supabase'
 import { useContexto } from '../lib/contexto'
-import { listaTipos, tiposConsulta } from '../lib/tipos'
+import { listaTipos, tiposConsulta, etiquetaResultado } from '../lib/tipos'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 import LeadTimeMes from '../components/LeadTimeMes'
 
@@ -127,7 +127,8 @@ export default function Hallazgos() {
   const posSla = Math.min(sla / ANCHO, 15.5) - 0.5
 
   return (
-    <div className="resumen">
+    <div className={cargando && dato ? 'resumen recalculando' : 'resumen'}>
+      {cargando && dato && <div className="actualizando" role="status">Actualizando…</div>}
       <Cabecera kicker="Hallazgos" titulo="¿Qué acelera y qué frena una formalización?" sub="Qué explica el Lead Time de formalización, por tipo, canal, franja horaria y retrocesos." pose="prestamito_pensando" />
 
       <div className="filtros-resumen">
@@ -137,9 +138,9 @@ export default function Hallazgos() {
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
 
-      {cargando && <p className="cargando">Calculando hallazgos de {pais.nombre}…</p>}
+      {cargando && !dato && <p className="cargando">Calculando hallazgos de {pais.nombre}…</p>}
 
-      {!cargando && dato && (
+      {dato && (
         <>
           <div className="kpis">
             <Kpi label="Formalizadas sin retrocesos" value={fmtPct(dato.pct_sin_retrocesos)} foot="pasaron por el flujo sin volver atrás" tono="verde" />
@@ -221,7 +222,7 @@ export default function Hallazgos() {
               <Grafico
                 height={360}
                 data={[
-                  ...tendRes.map((r) => ({ type: 'bar', name: r.replace('_', ' '), x: tendMeses, y: tendMeses.map((m) => dato.tendencia?.find((t) => t.mes === m && t.resultado === r)?.n ?? 0), marker: { color: RES_COLOR[r] } })),
+                  ...tendRes.map((r) => ({ type: 'bar', name: etiquetaResultado(r), x: tendMeses, y: tendMeses.map((m) => dato.tendencia?.find((t) => t.mes === m && t.resultado === r)?.n ?? 0), marker: { color: RES_COLOR[r] } })),
                   { type: 'scatter', mode: 'lines+markers+text', name: 'Conversión', x: tendMeses, y: tendMeses.map((m) => dato.conversion_mes?.find((c) => c.mes === m)?.conv ?? null), yaxis: 'y2', text: tendMeses.map((m) => fmtPct(dato.conversion_mes?.find((c) => c.mes === m)?.conv)), textposition: 'top center', line: { color: PALETA.navy, width: 2 } },
                 ]}
                 layout={{ barmode: 'stack', yaxis2: { overlaying: 'y', side: 'right', tickformat: '.0%', range: [0, 1.15], showgrid: false }, xaxis: { dtick: 'M1', tickformat: '%b %Y' } }}

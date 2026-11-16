@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { sb } from '../lib/supabase'
 import { useContexto, mesDe, finDeMes } from '../lib/contexto'
-import { listaTipos, unificarTipo } from '../lib/tipos'
+import { listaTipos, unificarTipo, etiquetaResultado } from '../lib/tipos'
 import { ymd } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 import LeadTimeMes from '../components/LeadTimeMes'
@@ -149,7 +149,7 @@ export default function Resumen() {
             height={320}
             data={[
               ...porRes.map((r) => ({
-                type: 'bar', name: r.replace('_', ' '), x: mesesF,
+                type: 'bar', name: etiquetaResultado(r), x: mesesF,
                 y: mesesF.map((m) => sum((x) => (x.mes === m && x.resultado_final === r ? x.creadas : 0))),
                 marker: { color: RES_COLOR[r] },
               })),
@@ -167,7 +167,7 @@ export default function Resumen() {
           <p className="sub">Distribución de las solicitudes del periodo</p>
           <Grafico
             height={320}
-            data={[{ type: 'pie', hole: 0.6, sort: false, labels: dona.map((x) => x.r.replace('_', ' ')), values: dona.map((x) => x.n), marker: { colors: dona.map((x) => RES_COLOR[x.r]) }, textinfo: 'percent' }]}
+            data={[{ type: 'pie', hole: 0.6, sort: false, labels: dona.map((x) => etiquetaResultado(x.r)), values: dona.map((x) => x.n), marker: { colors: dona.map((x) => RES_COLOR[x.r]) }, textinfo: 'percent' }]}
             layout={{ margin: { l: 8, r: 8, t: 20, b: 8 } }}
           />
         </div>

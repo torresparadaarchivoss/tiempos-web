@@ -61,7 +61,8 @@ export default function Cuellos() {
   const top = estados[0]
 
   return (
-    <div className="resumen">
+    <div className={cargando && datos ? 'resumen recalculando' : 'resumen'}>
+      {cargando && datos && <div className="actualizando" role="status">Actualizando…</div>}
       <Cabecera kicker="Cuellos y reprocesos" titulo="Dónde se nos va el tiempo (y cómo recuperarlo)" sub="En qué estados se va el Lead Time de formalización. Los estados posteriores a aprobado informa quedan fuera del análisis." pose="prestamito_estrategia" />
 
       <div className="filtros-resumen">
@@ -71,9 +72,9 @@ export default function Cuellos() {
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
 
-      {cargando && <p className="cargando">Calculando cuellos de {pais.nombre}…</p>}
+      {cargando && !datos && <p className="cargando">Calculando cuellos de {pais.nombre}…</p>}
 
-      {!cargando && datos && (
+      {datos && (
         <>
           <div className="kpis">
             <Kpi label="Estado que más tiempo consume" value={top ? top.estado : '—'} foot={top ? `${(top.share * 100).toFixed(0)}% del Lead Time de formalización` : ''} tono="rojo" />

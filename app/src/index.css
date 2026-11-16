@@ -36,6 +36,13 @@ label { display: block; font-weight: 600; margin-bottom: .9rem; color: var(--nav
 .sub { color: var(--gris); margin-top: -.3rem; }
 .error { color: var(--rojo); font-weight: 600; }
 .cargando, .aviso { padding: 2rem; }
+/* Recalculo al cambiar filtros: se mantiene lo dibujado, atenuado, con un aviso flotante */
+.recalculando .kpis, .recalculando .tarjeta-seccion, .recalculando .preguntas, .recalculando .vacio { opacity: .55; transition: opacity .2s; }
+.actualizando {
+  position: fixed; top: 1rem; right: 1rem; z-index: 50;
+  background: var(--navy); color: #fff; font-weight: 700; font-size: .85rem;
+  padding: .45rem 1rem; border-radius: 999px; box-shadow: 0 4px 14px rgba(6, 37, 91, .25);
+}
 .slogan { color: var(--lima); font-family: var(--tit); font-weight: 800; }
 
 /* Login */

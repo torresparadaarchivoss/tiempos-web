@@ -102,7 +102,8 @@ export default function Equipo() {
   const promedio = dato?.prod_promedio_dia ?? 0
 
   return (
-    <div className="resumen">
+    <div className={cargando && dato ? 'resumen recalculando' : 'resumen'}>
+      {cargando && dato && <div className="actualizando" role="status">Actualizando…</div>}
       <Cabecera kicker="Equipo y DAC" titulo="El equipo que hace posible cada formalización" sub={`Periodo del ${fechaEs(desde)} al ${fechaEs(hasta)}. Productividad por persona y gestión DAC; excluye usuarios inactivos y los estados posteriores a aprobado informa.`} pose="prestamito_equipo_celebrando" />
 
       <div className="filtros-resumen">
@@ -112,9 +113,9 @@ export default function Equipo() {
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
 
-      {cargando && <p className="cargando">Calculando Equipo y DAC de {pais.nombre}…</p>}
+      {cargando && !dato && <p className="cargando">Calculando Equipo y DAC de {pais.nombre}…</p>}
 
-      {!cargando && dato && (
+      {dato && (
         <>
           <h2 className="seccion">Productividad del equipo</h2>
           <div className="filtros-resumen">

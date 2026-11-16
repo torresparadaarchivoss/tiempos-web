@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { sb } from '../lib/supabase'
 import { useContexto, mesDe, finDeMes } from '../lib/contexto'
-import { listaTipos, unificarTipo } from '../lib/tipos'
+import { listaTipos, unificarTipo, etiquetaResultado } from '../lib/tipos'
 import { ymd } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
@@ -119,7 +119,7 @@ export default function Comparativo() {
   const resultados = ['EXITOSA', 'RECHAZADA', 'DESERCION', 'EN_PROCESO', 'ESTANCADA', 'SOLO_UN_ESTADO']
   const resColor: Record<string, string> = { EXITOSA: PALETA.verde, RECHAZADA: PALETA.rojo, DESERCION: PALETA.naranja, EN_PROCESO: PALETA.cielo, ESTANCADA: PALETA.amarillo, SOLO_UN_ESTADO: '#9AA6C4' }
   const resTrazas = resultados.map((r) => ({
-    type: 'bar', name: r.replace('_', ' '), x: nombres,
+    type: 'bar', name: etiquetaResultado(r), x: nombres,
     y: idsPaises.map((id) => {
       const rows = f.filter((x) => x.id_pais === id)
       const c = rows.reduce((a, x) => a + x.creadas, 0)

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { sb } from '../lib/supabase'
 import { useContexto } from '../lib/contexto'
-import { listaTipos, tiposConsulta, unificarTipo } from '../lib/tipos'
+import { listaTipos, tiposConsulta, unificarTipo, etiquetaResultado } from '../lib/tipos'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Abiertas y posibles errores. Cálculos en la base (funciones abiertas y abiertas_graficos).
@@ -78,7 +78,7 @@ export default function Abiertas() {
 
   function descargarCsv() {
     const cab = ['Solicitud', 'Resultado', 'Estado actual', 'Alerta', 'Tipo', 'Canal', 'Promotor', 'Creación', 'Último mov.', 'Días sin mov.', 'HH abierta', 'Último usuario', 'Rol']
-    const cuerpo = filas.map((f) => [f.solicitud, f.resultado, f.estado_actual, f.alertas, unificarTipo(f.tipo), f.canal, f.promotor, f.creacion, f.ultimo_mov, f.dias_sin_mov ?? '', f.hh_abierta ?? '', f.ultimo_usuario ?? '', f.ultimo_rol].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';'))
+    const cuerpo = filas.map((f) => [f.solicitud, etiquetaResultado(f.resultado), f.estado_actual, f.alertas, unificarTipo(f.tipo), f.canal, f.promotor, f.creacion, f.ultimo_mov, f.dias_sin_mov ?? '', f.hh_abierta ?? '', f.ultimo_usuario ?? '', f.ultimo_rol].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';'))
     const blob = new Blob(['﻿' + [cab.join(';'), ...cuerpo].join('\r\n')], { type: 'text/csv' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -90,8 +90,9 @@ export default function Abiertas() {
   const pct = (n: number, d: number) => (d ? `${((n / d) * 100).toFixed(1)}%` : '—')
 
   return (
-    <div className="resumen">
-      <Cabecera kicker="Abiertas y posibles errores" titulo="Solicitudes que esperan nuestro apoyo" sub="Solicitudes que siguen abiertas: en proceso, estancadas o con un solo estado. Las alertas señalan casos a revisar." pose="prestamito_senalando" />
+    <div className={cargando && dato ? 'resumen recalculando' : 'resumen'}>
+      {cargando && dato && <div className="actualizando" role="status">Actualizando…</div>}
+      <Cabecera kicker="Abiertas y posibles errores" titulo="Solicitudes que esperan nuestro apoyo" sub="Solicitudes que siguen abiertas: en proceso, estancadas o en abandono (un solo estado). Las alertas señalan casos a revisar." pose="prestamito_senalando" />
 
       <div className="filtros-resumen">
         <label>Desde<input type="date" lang="es-CR" value={desde} disabled={todo} onChange={(e) => e.target.value && setPeriodo({ desde: e.target.value, hasta })} /></label>
@@ -101,15 +102,15 @@ export default function Abiertas() {
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
 
-      {cargando && <p className="cargando">Calculando abiertas de {pais.nombre}…</p>}
+      {cargando && !dato && <p className="cargando">Calculando abiertas de {pais.nombre}…</p>}
 
-      {!cargando && dato && (
+      {dato && (
         <>
           <div className="kpis">
             <Kpi label="Abiertas" value={dato.abiertas.toLocaleString('es-CR')} foot={`${pct(dato.abiertas, dato.total_base)} de las creadas`} tono="navy" />
             <Kpi label="En proceso" value={dato.en_proceso.toLocaleString('es-CR')} foot={`${dato.en_proceso_sobre_sla} ya superan el SLA`} tono="cielo" />
             <Kpi label="Estancadas" value={dato.estancadas.toLocaleString('es-CR')} foot="30+ días sin movimiento" tono="naranja" />
-            <Kpi label="Un solo estado" value={dato.solo_un_estado.toLocaleString('es-CR')} foot="no se mide su tiempo" tono="lima" />
+            <Kpi label="Abandono" value={dato.solo_un_estado.toLocaleString('es-CR')} foot="un solo estado: no se mide su tiempo" tono="lima" />
             <Kpi label="Estado final terminal" value={dato.terminal.toLocaleString('es-CR')} foot="abiertas que parecen cerradas: posible error" tono="rojo" />
           </div>
 
@@ -121,7 +122,7 @@ export default function Abiertas() {
                 <Grafico
                   height={Math.max(300, 26 * estadosUnicos.length + 120)}
                   data={RES.map((r) => ({
-                    type: 'bar', orientation: 'h', name: r.replace('_', ' '), marker: { color: RES_COLOR[r] },
+                    type: 'bar', orientation: 'h', name: etiquetaResultado(r), marker: { color: RES_COLOR[r] },
                     x: estadosUnicos.map((e) => graf.por_estado.find((x) => x.estado === e && x.resultado === r)?.n ?? 0),
                     y: estadosUnicos,
                   }))}
@@ -131,7 +132,7 @@ export default function Abiertas() {
             </div>
             <div className="tarjeta-seccion">
               <h2>Días sin movimiento</h2>
-              <p className="sub">En proceso y estancadas (las de un solo estado no se miden)</p>
+              <p className="sub">En proceso y estancadas (las de abandono no se miden)</p>
               {graf && graf.dias.length > 0 ? (
                 <Grafico
                   height={300}
@@ -175,7 +176,7 @@ export default function Abiertas() {
                 <tbody>{filas.map((f) => (
                   <tr key={f.solicitud} className={`${f.posible_error ? 'fila-alerta' : ''} ${sel === f.solicitud ? 'fila-sel' : ''}`} onClick={() => setSel(f.solicitud)}>
                     <td><input type="radio" name="sel" checked={sel === f.solicitud} readOnly /></td>
-                    <td>{f.solicitud}</td><td>{f.resultado}</td><td>{f.estado_actual}</td><td className="celda-alerta">{f.alertas}</td>
+                    <td>{f.solicitud}</td><td>{etiquetaResultado(f.resultado)}</td><td>{f.estado_actual}</td><td className="celda-alerta">{f.alertas}</td>
                     <td>{unificarTipo(f.tipo)}</td><td>{f.canal}</td><td>{f.promotor}</td><td>{fmtFecha(f.creacion)}</td><td>{fmtFecha(f.ultimo_mov)}</td>
                     <td>{f.dias_sin_mov ?? '—'}</td><td>{f.hh_abierta ?? '—'}</td><td>{f.ultimo_usuario ?? '—'}</td><td>{f.ultimo_rol}</td>
                   </tr>
@@ -187,7 +188,7 @@ export default function Abiertas() {
           <div className="preguntas">
             <h2>Preguntas y respuestas</h2>
             <div className="preguntas-grid">
-              <div className="qa"><b>¿Cuántas siguen abiertas?</b>{`${dato.abiertas.toLocaleString('es-CR')} solicitudes: ${dato.en_proceso.toLocaleString('es-CR')} en proceso, ${dato.estancadas.toLocaleString('es-CR')} estancadas y ${dato.solo_un_estado.toLocaleString('es-CR')} con un solo estado.`}</div>
+              <div className="qa"><b>¿Cuántas siguen abiertas?</b>{`${dato.abiertas.toLocaleString('es-CR')} solicitudes: ${dato.en_proceso.toLocaleString('es-CR')} en proceso, ${dato.estancadas.toLocaleString('es-CR')} estancadas y ${dato.solo_un_estado.toLocaleString('es-CR')} en abandono.`}</div>
               <div className="qa"><b>¿Cuántas podrían ser errores?</b>{`${dato.posibles_errores.toLocaleString('es-CR')} (${pct(dato.posibles_errores, dato.abiertas)} de las abiertas) están estancadas, no avanzaron o terminan en un estado que parece de cierre (${dato.terminal.toLocaleString('es-CR')}).`}</div>
               <div className="qa"><b>¿Dónde se acumulan?</b>{dato.estados_finales[0] ? `El estado actual más frecuente es «${dato.estados_finales[0].estado_final}» con ${dato.estados_finales[0].solicitudes.toLocaleString('es-CR')} solicitudes.` : 'Sin datos.'}</div>
               <div className="qa"><b>¿Cuántas en proceso ya incumplen el SLA?</b>{`${dato.en_proceso_sobre_sla} superan ${sla} HH y ${dato.en_proceso_riesgo} están en riesgo (más del 75% del SLA).`}</div>
