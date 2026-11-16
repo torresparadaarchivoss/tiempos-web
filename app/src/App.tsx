@@ -6,7 +6,7 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Resumen from './pages/Resumen'
 import Cuellos from './pages/Cuellos'
-import Insights from './pages/Insights'
+import Hallazgos from './pages/Hallazgos'
 import Abiertas from './pages/Abiertas'
 import Consulta from './pages/Consulta'
 import Equipo from './pages/Equipo'
@@ -57,7 +57,8 @@ export default function App() {
             <Route path="/" element={<Navigate to="/resumen" replace />} />
             <Route path="/resumen" element={<Resumen />} />
             <Route path="/cuellos" element={<Cuellos />} />
-            <Route path="/insights" element={<Insights />} />
+            <Route path="/hallazgos" element={<Hallazgos />} />
+            <Route path="/insights" element={<Navigate to="/hallazgos" replace />} />
             <Route path="/abiertas" element={<Abiertas />} />
             <Route path="/consulta" element={<Consulta />} />
             <Route path="/equipo" element={<Equipo />} />

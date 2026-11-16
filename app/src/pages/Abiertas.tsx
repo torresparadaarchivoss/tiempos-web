@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { sb } from '../lib/supabase'
-import { periodoPorDefecto } from '../lib/fechas'
+import { useContexto } from '../lib/contexto'
+import { listaTipos, tiposConsulta, unificarTipo } from '../lib/tipos'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Abiertas y posibles errores. Cálculos en la base (funciones abiertas y abiertas_graficos).
@@ -23,10 +24,9 @@ const RES_COLOR: Record<string, string> = { EN_PROCESO: PALETA.cielo, ESTANCADA:
 const fmtFecha = (s: string) => (s ? new Date(s).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—')
 
 export default function Abiertas() {
-  const { pais, sla } = useOutletContext<{ pais: { id_pais: number; nombre: string }; sla: number }>()
+  const { pais, sla, periodo, setPeriodo } = useContexto()
+  const { desde, hasta } = periodo
   const navigate = useNavigate()
-  const [desde, setDesde] = useState(periodoPorDefecto().desde)
-  const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
   const [todo, setTodo] = useState(false)
   const [tipo, setTipo] = useState('')
   const [canal, setCanal] = useState('')
@@ -43,7 +43,7 @@ export default function Abiertas() {
   useEffect(() => {
     let vivo = true
     sb.from('resumen_mensual').select('tipo_solicitud').eq('id_pais', pais.id_pais).then(({ data }) => {
-      if (vivo && data) setTipos([...new Set(data.map((r: { tipo_solicitud: string }) => r.tipo_solicitud))].sort())
+      if (vivo && data) setTipos(listaTipos(data.map((r: { tipo_solicitud: string }) => r.tipo_solicitud)))
     })
     sb.from('usuario_operativo').select('canal').eq('id_pais', pais.id_pais).then(({ data }) => {
       if (vivo && data) setCanales([...new Set(data.map((r: { canal: string | null }) => r.canal || 'SIN CANAL'))].sort())
@@ -55,7 +55,7 @@ export default function Abiertas() {
     let vivo = true
     setCargando(true)
     setError(null)
-    const args = { p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta, p_tipos: tipo ? [tipo] : null, p_canales: canal ? [canal] : null, p_todo: todo }
+    const args = { p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta, p_tipos: tiposConsulta(tipo), p_canales: canal ? [canal] : null, p_todo: todo }
     Promise.all([
       sb.rpc('abiertas', { ...args, p_sla: sla }),
       sb.rpc('abiertas_graficos', args),
@@ -78,7 +78,7 @@ export default function Abiertas() {
 
   function descargarCsv() {
     const cab = ['Solicitud', 'Resultado', 'Estado actual', 'Alerta', 'Tipo', 'Canal', 'Promotor', 'Creación', 'Último mov.', 'Días sin mov.', 'HH abierta', 'Último usuario', 'Rol']
-    const cuerpo = filas.map((f) => [f.solicitud, f.resultado, f.estado_actual, f.alertas, f.tipo, f.canal, f.promotor, f.creacion, f.ultimo_mov, f.dias_sin_mov ?? '', f.hh_abierta ?? '', f.ultimo_usuario ?? '', f.ultimo_rol].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';'))
+    const cuerpo = filas.map((f) => [f.solicitud, f.resultado, f.estado_actual, f.alertas, unificarTipo(f.tipo), f.canal, f.promotor, f.creacion, f.ultimo_mov, f.dias_sin_mov ?? '', f.hh_abierta ?? '', f.ultimo_usuario ?? '', f.ultimo_rol].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';'))
     const blob = new Blob(['﻿' + [cab.join(';'), ...cuerpo].join('\r\n')], { type: 'text/csv' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -94,8 +94,8 @@ export default function Abiertas() {
       <Cabecera kicker="Abiertas y posibles errores" titulo="Solicitudes que esperan nuestro apoyo" sub="Solicitudes que siguen abiertas: en proceso, estancadas o con un solo estado. Las alertas señalan casos a revisar." pose="prestamito_senalando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" lang="es-CR" value={desde} disabled={todo} onChange={(e) => e.target.value && setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" lang="es-CR" value={hasta} disabled={todo} onChange={(e) => e.target.value && setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} disabled={todo} onChange={(e) => e.target.value && setPeriodo({ desde: e.target.value, hasta })} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} disabled={todo} onChange={(e) => e.target.value && setPeriodo({ desde, hasta: e.target.value })} /></label>
         <label className="casilla"><input type="checkbox" checked={todo} onChange={(e) => setTodo(e.target.checked)} /> Todo el periodo cargado</label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
@@ -125,7 +125,7 @@ export default function Abiertas() {
                     x: estadosUnicos.map((e) => graf.por_estado.find((x) => x.estado === e && x.resultado === r)?.n ?? 0),
                     y: estadosUnicos,
                   }))}
-                  layout={{ barmode: 'stack', margin: { l: 8, r: 16, t: 28, b: 30 } }}
+                  layout={{ barmode: 'stack' }}
                 />
               ) : <p className="sub">Sin datos con estos filtros.</p>}
             </div>
@@ -176,7 +176,7 @@ export default function Abiertas() {
                   <tr key={f.solicitud} className={`${f.posible_error ? 'fila-alerta' : ''} ${sel === f.solicitud ? 'fila-sel' : ''}`} onClick={() => setSel(f.solicitud)}>
                     <td><input type="radio" name="sel" checked={sel === f.solicitud} readOnly /></td>
                     <td>{f.solicitud}</td><td>{f.resultado}</td><td>{f.estado_actual}</td><td className="celda-alerta">{f.alertas}</td>
-                    <td>{f.tipo}</td><td>{f.canal}</td><td>{f.promotor}</td><td>{fmtFecha(f.creacion)}</td><td>{fmtFecha(f.ultimo_mov)}</td>
+                    <td>{unificarTipo(f.tipo)}</td><td>{f.canal}</td><td>{f.promotor}</td><td>{fmtFecha(f.creacion)}</td><td>{fmtFecha(f.ultimo_mov)}</td>
                     <td>{f.dias_sin_mov ?? '—'}</td><td>{f.hh_abierta ?? '—'}</td><td>{f.ultimo_usuario ?? '—'}</td><td>{f.ultimo_rol}</td>
                   </tr>
                 ))}</tbody>

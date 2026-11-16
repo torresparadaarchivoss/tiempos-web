@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
-import { periodoPorDefecto, fechaEs } from '../lib/fechas'
+import { fechaEs } from '../lib/fechas'
+import { useContexto } from '../lib/contexto'
+import { listaTipos, tiposConsulta } from '../lib/tipos'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Equipo y DAC. Cálculos en la base (función equipo).
@@ -19,22 +20,34 @@ type Dato = {
   resp_roles: string[]; resp_roles_sel: string[]; resp_cerradas: number; resp_mismo: number | null
   resp_cambio: number | null; resp_pendientes: number; resp_solicitudes_mismo: number | null
   resp_tabla: Fila[]; resp_distribucion: { tramo: string; n: number }[]
+  pend_comp?: { con: Comp | null; sin: Comp | null; estadias_pend: number; horas_pend: number }
 }
+type Comp = { estadias: number; pct_mismo: number | null; mediana_dias: number | null; horas_prom: number | null; horas: number | null }
 
 const pct = (x: number | null | undefined) => (x == null ? '—' : `${(x * 100).toFixed(1)}%`)
 const nf = (n: number) => n.toLocaleString('es-CR')
+const COLOR_TRAMO: Record<string, string> = { 'Mismo día': PALETA.verde, '1 día': PALETA.cielo, '2 días': PALETA.amarillo }
+// Filas de la comparación con/sin PENDIENTES: nombre, valor, formato y si es porcentaje
+const FILAS_COMP: [string, (c: Comp) => number | null, (v: number) => string, boolean][] = [
+  ['Estadías cerradas', (c) => c.estadias, (v) => nf(v), false],
+  ['% gestionadas el mismo día', (c) => c.pct_mismo, (v) => pct(v), true],
+  ['Mediana de días para salir', (c) => c.mediana_dias, (v) => v.toFixed(1), false],
+  ['Horas hábiles promedio por estadía', (c) => c.horas_prom, (v) => `${v.toFixed(1)} HH`, false],
+  ['Horas hábiles totales', (c) => c.horas, (v) => `${nf(Math.round(v))} HH`, false],
+]
 
 export default function Equipo() {
-  const { pais, rolesDac } = useOutletContext<{ pais: { id_pais: number; nombre: string }; rolesDac: string[] }>()
-  const [desde, setDesde] = useState(periodoPorDefecto().desde)
-  const [hasta, setHasta] = useState(periodoPorDefecto().hasta)
+  const { pais, rolesDac, periodo, setPeriodo } = useContexto()
+  const { desde, hasta } = periodo
   const [tipo, setTipo] = useState('')
   const [canal, setCanal] = useState('')
   const [asig, setAsig] = useState<'atiende' | 'dejo'>('atiende')
   const [habil, setHabil] = useState(true)
   const [dim, setDim] = useState<'estado' | 'usuario' | 'rol'>('estado')
+  // Roles elegidos; null = los roles DAC de Parámetros (selección por defecto en las dos secciones)
   const [rolesProd, setRolesProd] = useState<string[] | null>(null)
   const [rolesResp, setRolesResp] = useState<string[] | null>(null)
+  const [sinPend, setSinPend] = useState(false)
   const [dato, setDato] = useState<Dato | null>(null)
   const [tipos, setTipos] = useState<string[]>([])
   const [canales, setCanales] = useState<string[]>([])
@@ -44,11 +57,14 @@ export default function Equipo() {
   useEffect(() => {
     let vivo = true
     sb.from('resumen_mensual').select('tipo_solicitud').eq('id_pais', pais.id_pais).then(({ data }) => {
-      if (vivo && data) setTipos([...new Set(data.map((r: { tipo_solicitud: string }) => r.tipo_solicitud))].sort())
+      if (vivo && data) setTipos(listaTipos(data.map((r: { tipo_solicitud: string }) => r.tipo_solicitud)))
     })
     sb.from('usuario_operativo').select('canal').eq('id_pais', pais.id_pais).then(({ data }) => {
       if (vivo && data) setCanales([...new Set(data.map((r: { canal: string | null }) => r.canal || 'SIN CANAL'))].sort())
     })
+    // Al cambiar de país se vuelve a la selección DAC
+    setRolesProd(null)
+    setRolesResp(null)
     return () => { vivo = false }
   }, [pais.id_pais])
 
@@ -58,8 +74,9 @@ export default function Equipo() {
     setError(null)
     sb.rpc('equipo', {
       p_pais: pais.id_pais, p_desde: desde, p_hasta: hasta,
-      p_tipos: tipo ? [tipo] : null, p_canales: canal ? [canal] : null, p_resultados: null,
-      p_roles: rolesProd, p_roles_resp: rolesResp, p_asig: asig, p_habil: habil, p_dim: dim, p_roles_dac: rolesDac,
+      p_tipos: tiposConsulta(tipo), p_canales: canal ? [canal] : null, p_resultados: null,
+      p_roles: rolesProd ?? rolesDac, p_roles_resp: rolesResp ?? rolesDac, p_asig: asig, p_habil: habil, p_dim: dim, p_roles_dac: rolesDac,
+      p_sin_pend: sinPend,
     }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo calcular: ' + err.message)
@@ -77,7 +94,7 @@ export default function Equipo() {
       setCargando(false)
     })
     return () => { vivo = false }
-  }, [pais.id_pais, desde, hasta, tipo, canal, asig, habil, dim, rolesProd, rolesResp, rolesDac])
+  }, [pais.id_pais, desde, hasta, tipo, canal, asig, habil, dim, rolesProd, rolesResp, rolesDac, sinPend])
 
   if (error) return <p className="error">{error}</p>
 
@@ -89,8 +106,8 @@ export default function Equipo() {
       <Cabecera kicker="Equipo y DAC" titulo="El equipo que hace posible cada formalización" sub={`Periodo del ${fechaEs(desde)} al ${fechaEs(hasta)}. Productividad por persona y gestión DAC; excluye usuarios inactivos y los estados posteriores a aprobado informa.`} pose="prestamito_equipo_celebrando" />
 
       <div className="filtros-resumen">
-        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => e.target.value && setDesde(e.target.value)} /></label>
-        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => e.target.value && setHasta(e.target.value)} /></label>
+        <label>Desde<input type="date" lang="es-CR" value={desde} onChange={(e) => e.target.value && setPeriodo({ desde: e.target.value, hasta })} /></label>
+        <label>Hasta<input type="date" lang="es-CR" value={hasta} onChange={(e) => e.target.value && setPeriodo({ desde, hasta: e.target.value })} /></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
         <label>Canal<select value={canal} onChange={(e) => setCanal(e.target.value)}><option value="">Todos</option>{canales.map((c) => <option key={c} value={c}>{c}</option>)}</select></label>
       </div>
@@ -110,7 +127,7 @@ export default function Equipo() {
           </div>
 
           {dato.prod_personas === 0 ? (
-            <div className="vacio"><h2>No hay movimientos para esos roles</h2><p>Asigná el rol ANALISTA a los usuarios en Parámetros.</p></div>
+            <div className="vacio"><h2>No hay movimientos para esos roles</h2><p>Marcá otros roles arriba o revisá los roles de los usuarios en Parámetros.</p></div>
           ) : (
             <>
               <div className="kpis">
@@ -128,7 +145,7 @@ export default function Equipo() {
                     marker: { color: PALETA.verde }, hovertemplate: '<b>%{y}</b><br>%{x:.2f} por día<extra></extra>',
                   }]}
                   layout={{ showlegend: false, shapes: [{ type: 'line', x0: promedio, x1: promedio, yref: 'paper', y0: 0, y1: 1, line: { color: PALETA.naranja, dash: 'dash' } }],
-                    annotations: [{ x: promedio, y: 1, yref: 'paper', text: 'promedio', showarrow: false, yanchor: 'bottom' }], margin: { l: 8, r: 16, t: 30, b: 30 } }}
+                    annotations: [{ x: promedio, y: 1, yref: 'paper', text: 'promedio', showarrow: false, yanchor: 'bottom' }], margin: { t: 30 } }}
                 />
               </div>
             </>
@@ -178,6 +195,11 @@ export default function Equipo() {
           </div>
           <div className="filtros-resumen">
             <div className="grupo-roles">
+              <span className="etiqueta-roles">Estado PENDIENTES</span>
+              <button type="button" className={!sinPend ? 'pestana activa' : 'pestana'} onClick={() => setSinPend(false)}>Con pendientes</button>
+              <button type="button" className={sinPend ? 'pestana activa' : 'pestana'} onClick={() => setSinPend(true)}>Sin pendientes</button>
+            </div>
+            <div className="grupo-roles">
               <span className="etiqueta-roles">Roles</span>
               {dato.resp_roles.map((r) => (
                 <label key={r} className="casilla"><input type="checkbox" checked={dato.resp_roles_sel.includes(r)} onChange={() => setRolesResp(alternar(dato.resp_roles_sel, r))} /> {r}</label>
@@ -189,8 +211,34 @@ export default function Equipo() {
             <Kpi label="Estadías gestionadas el mismo día" value={pct(dato.resp_mismo)} foot={`${nf(dato.resp_cerradas)} estadías cerradas`} tono="verde" />
             <Kpi label="Cambiaron de día" value={pct(dato.resp_cambio)} tono="naranja" />
             <Kpi label="Solicitudes con todo el mismo día" value={pct(dato.resp_solicitudes_mismo)} tono="cielo" />
-            <Kpi label="Pendientes" value={nf(dato.resp_pendientes)} foot="estadías que todavía no salen del estado" tono="navy" />
+            <Kpi label="Aún sin salir" value={nf(dato.resp_pendientes)} foot="estadías que todavía no salen del estado" tono="navy" />
           </div>
+
+          {dato.pend_comp?.con && (
+            <div className="tarjeta-seccion">
+              <h2>Con y sin PENDIENTES</h2>
+              <p className="sub">El estado PENDIENTES espera al cliente y no es trabajo del equipo. Sin él se ve el tiempo de respuesta propio de los roles elegidos (estadías cerradas).</p>
+              <div className="tabla-scroll">
+                <table>
+                  <thead><tr><th>Indicador</th><th>Con pendientes</th><th>Sin pendientes</th><th>Diferencia</th></tr></thead>
+                  <tbody>
+                    {FILAS_COMP.map(([nombre, val, fmt, esPct]) => {
+                      const a = val(dato.pend_comp!.con!)
+                      const b = dato.pend_comp!.sin ? val(dato.pend_comp!.sin) : null
+                      const dif = a != null && b != null ? b - a : null
+                      return (
+                        <tr key={nombre}>
+                          <td>{nombre}</td><td>{a == null ? '—' : fmt(a)}</td><td>{b == null ? '—' : fmt(b)}</td>
+                          <td>{dif == null ? '—' : `${dif > 0 ? '+' : ''}${esPct ? `${(dif * 100).toFixed(1)} pts` : fmt(dif)}`}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="sub">{`PENDIENTES: ${nf(dato.pend_comp.estadias_pend)} estadías y ${nf(Math.round(dato.pend_comp.horas_pend))} HH hábiles${dato.pend_comp.con.horas ? ` (${pct(dato.pend_comp.horas_pend / dato.pend_comp.con.horas)} de las horas)` : ''}. Los indicadores, la tabla y el gráfico de esta sección usan la opción elegida arriba: ${sinPend ? 'sin' : 'con'} pendientes.`}</p>
+            </div>
+          )}
 
           <div className="grid-dos">
             <div className="tarjeta-seccion">
@@ -198,7 +246,7 @@ export default function Equipo() {
               <p className="sub">Criterio {habil ? 'hábil' : 'calendario'} · estado asignado a {asig === 'atiende' ? 'quien lo atiende' : 'quien lo dejó ahí'}</p>
               <div className="tabla-scroll">
                 <table>
-                  <thead><tr><th>{dim}</th><th>Solicitudes</th><th>Estadías</th><th>Mismo día</th><th>% mismo día</th><th>Cambió día</th><th>% cambió día</th><th>Mediana días</th><th>Pendientes</th></tr></thead>
+                  <thead><tr><th>{dim}</th><th>Solicitudes</th><th>Estadías</th><th>Mismo día</th><th>% mismo día</th><th>Cambió día</th><th>% cambió día</th><th>Mediana días</th><th>Sin salir</th></tr></thead>
                   <tbody>{dato.resp_tabla.map((f) => (
                     <tr key={f.clave}><td>{f.clave}</td><td>{nf(f.solicitudes)}</td><td>{nf(f.estadias)}</td><td>{nf(f.mismo)}</td><td>{pct(f.pct_mismo)}</td><td>{nf(f.cambio)}</td><td>{pct(f.pct_cambio)}</td><td>{f.mediana_dias ?? '—'}</td><td>{nf(f.pendientes)}</td></tr>
                   ))}</tbody>
@@ -214,7 +262,7 @@ export default function Equipo() {
                   data={[{
                     type: 'bar', x: dato.resp_distribucion.map((d) => d.tramo), y: dato.resp_distribucion.map((d) => d.n),
                     text: dato.resp_distribucion.map((d) => pct(d.n / dato.resp_distribucion.reduce((a, x) => a + x.n, 0))), textposition: 'outside',
-                    marker: { color: [PALETA.verde, PALETA.cielo, PALETA.amarillo, PALETA.rojo] },
+                    marker: { color: dato.resp_distribucion.map((d) => COLOR_TRAMO[d.tramo] ?? PALETA.rojo) },
                   }]}
                   layout={{ showlegend: false, yaxis: { title: { text: 'Estadías' } } }}
                 />

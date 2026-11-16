@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { useContexto, mesDe, finDeMes } from '../lib/contexto'
+import { listaTipos, unificarTipo } from '../lib/tipos'
+import { ymd } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 import LeadTimeMes from '../components/LeadTimeMes'
 
@@ -23,13 +25,11 @@ const etiquetaMes = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateStr
 const pc = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : '—')
 
 export default function Resumen() {
-  const { pais } = useOutletContext<{ pais: { id_pais: number; nombre: string } }>()
+  const { pais, periodo, setPeriodo } = useContexto()
   const [filas, setFilas] = useState<Fila[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tipo, setTipo] = useState(TODOS)
-  const [desde, setDesde] = useState('')
-  const [hasta, setHasta] = useState('')
 
   useEffect(() => {
     let vivo = true
@@ -49,11 +49,20 @@ export default function Resumen() {
   }, [pais.id_pais])
 
   const meses = useMemo(() => [...new Set(filas.map((x) => x.mes))].sort(), [filas])
-  const tipos = useMemo(() => [...new Set(filas.map((x) => x.tipo_solicitud))].sort(), [filas])
-  const mDesde = desde || meses[0] || ''
-  const mHasta = hasta || meses[meses.length - 1] || ''
+  const tipos = useMemo(() => listaTipos(filas.map((x) => x.tipo_solicitud)), [filas])
+  // Meses del periodo compartido, ajustados a los meses que tienen datos
+  const primero = meses[0] ?? ''
+  const ultimo = meses[meses.length - 1] ?? ''
+  const ajustar = (m: string) => (m < primero ? primero : m > ultimo ? ultimo : m)
+  const mDesde = ajustar(mesDe(periodo.desde))
+  const mHasta = ajustar(mesDe(periodo.hasta))
+  const cambiarDesde = (m: string) => setPeriodo({ desde: m, hasta: m > mesDe(periodo.hasta) ? finDeMes(m) : periodo.hasta })
+  const cambiarHasta = (m: string) => {
+    const fin = finDeMes(m) > ymd(new Date()) ? ymd(new Date()) : finDeMes(m)
+    setPeriodo({ desde: m < mesDe(periodo.desde) ? m : periodo.desde, hasta: fin })
+  }
   const f = useMemo(
-    () => filas.filter((x) => x.mes >= mDesde && x.mes <= mHasta && (tipo === TODOS || x.tipo_solicitud === tipo)),
+    () => filas.filter((x) => x.mes >= mDesde && x.mes <= mHasta && (tipo === TODOS || unificarTipo(x.tipo_solicitud) === tipo)),
     [filas, mDesde, mHasta, tipo],
   )
 
@@ -73,6 +82,7 @@ export default function Resumen() {
   const formalizadas = sum((x) => x.formalizadas)
   const sumaHH = sum((x) => x.suma_hh_formalizado)
   const dentro = sum((x) => x.dentro_sla)
+  const hasta8 = sum((x) => x.hasta_8_hh)
   const rangos = [sum((x) => x.hasta_8_hh), sum((x) => x.de_8_a_16_hh), sum((x) => x.de_16_a_24_hh), sum((x) => x.mas_de_24_hh)]
   const limites = [8, 16, 24]
   function percentil(q: number): number | null {
@@ -88,7 +98,6 @@ export default function Resumen() {
     }
     return null
   }
-  const mediana = formalizadas ? percentil(0.5) : null
   const p90 = formalizadas ? percentil(0.9) : null
 
   // Series mensuales para mini gráficos y tendencia
@@ -99,8 +108,9 @@ export default function Resumen() {
     const fo = fm.reduce((a, x) => a + x.formalizadas, 0)
     const hh = fm.reduce((a, x) => a + x.suma_hh_formalizado, 0)
     const d = fm.reduce((a, x) => a + x.dentro_sla, 0)
+    const h8 = fm.reduce((a, x) => a + x.hasta_8_hh, 0)
     const ex = fm.filter((x) => x.resultado_final === 'EXITOSA').reduce((a, x) => a + x.creadas, 0)
-    return { mes: m, creadas: c, formalizadas: fo, prom: fo ? hh / fo : NaN, sla: fo ? d / fo : NaN, conv: c ? ex / c : NaN }
+    return { mes: m, creadas: c, formalizadas: fo, prom: fo ? hh / fo : NaN, sla: fo ? d / fo : NaN, h8: fo ? h8 / fo : NaN, conv: c ? ex / c : NaN }
   })
 
   const porRes = [...new Set(f.map((x) => x.resultado_final))]
@@ -118,18 +128,17 @@ export default function Resumen() {
       />
 
       <div className="filtros-resumen">
-        <label>Desde<select value={mDesde} onChange={(e) => setDesde(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
-        <label>Hasta<select value={mHasta} onChange={(e) => setHasta(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
+        <label>Desde<select value={mDesde} onChange={(e) => cambiarDesde(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
+        <label>Hasta<select value={mHasta} onChange={(e) => cambiarHasta(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value={TODOS}>Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
       </div>
 
       <div className="kpis">
         <Kpi label="Solicitudes creadas" value={fmtNum(creadas)} foot={`${fmtNum(formalizadas)} formalizadas · ${fmtNum(abiertas)} abiertas`} tono="navy" spark={serie.map((x) => x.creadas)} />
-        <Kpi label="Promedio hábil a formalización" value={fmtHH(formalizadas ? sumaHH / formalizadas : null)} tono="cielo" spark={serie.map((x) => x.prom)} />
-        <Kpi label={`Formalizadas en ≤ ${SLA_HH} HH`} value={fmtPct(formalizadas ? dentro / formalizadas : NaN)} tono="verde" relleno spark={serie.map((x) => x.sla)} />
-        <Kpi label="Mediana hábil (aprox.)" value={mediana == null ? `> ${SLA_HH} HH` : fmtHH(mediana)} foot="estimada por rangos" tono="verde" />
-        <Kpi label="P90, el 10% más lento (aprox.)" value={p90 == null ? `> ${SLA_HH} HH` : fmtHH(p90)} foot="estimado por rangos" tono="naranja" />
         <Kpi label="Conversión a formalizada" value={fmtPct(creadas ? formalizadas / creadas : NaN)} foot={`Rechazo ${pc(noFormal('RECHAZADA'), creadas)} · Deserción ${pc(noFormal('DESERCION'), creadas)}`} tono="lima" spark={serie.map((x) => x.conv)} />
+        <Kpi label="Lead Time promedio de formalización" value={fmtHH(formalizadas ? sumaHH / formalizadas : null)} tono="cielo" spark={serie.map((x) => x.prom)} />
+        <Kpi label="Formalizadas en ≤ 8 HH" value={fmtPct(formalizadas ? hasta8 / formalizadas : NaN)} foot={`${fmtNum(hasta8)} de ${fmtNum(formalizadas)} formalizadas`} tono="verde" relleno spark={serie.map((x) => x.h8)} />
+        <Kpi label="Lead Time P90 de formalización (aprox.)" value={p90 == null ? `> ${SLA_HH} HH` : fmtHH(p90)} foot="el 10% más lento; estimado por rangos" tono="naranja" />
       </div>
 
       <div className="grid-dos">
@@ -150,7 +159,7 @@ export default function Resumen() {
                 textposition: 'top center', line: { color: PALETA.navy, width: 2 },
               },
             ]}
-            layout={{ barmode: 'stack', yaxis2: { overlaying: 'y', side: 'right', tickformat: '.0%', range: [0, 1.05], showgrid: false }, xaxis: { dtick: 'M1', tickformat: '%b %Y' } }}
+            layout={{ barmode: 'stack', yaxis2: { overlaying: 'y', side: 'right', tickformat: '.0%', range: [0, 1.15], showgrid: false }, xaxis: { dtick: 'M1', tickformat: '%b %Y' } }}
           />
         </div>
         <div className="tarjeta-seccion">
@@ -166,8 +175,8 @@ export default function Resumen() {
 
       <div className="grid-dos">
         <div className="tarjeta-seccion">
-          <h2>Horas hábiles a formalizar</h2>
-          <p className="sub">Cuántas formalizadas caen en cada rango</p>
+          <h2>Lead Time de formalización por rango</h2>
+          <p className="sub">Cuántas formalizadas caen en cada rango de horas hábiles</p>
           <Grafico
             height={300}
             data={[{
@@ -181,7 +190,7 @@ export default function Resumen() {
         <div className="tarjeta-seccion">
           <h2>Por mes</h2>
           <table>
-            <thead><tr><th>Mes</th><th>Creadas</th><th>Formalizadas</th><th>Promedio HH</th><th>% SLA</th></tr></thead>
+            <thead><tr><th>Mes</th><th>Creadas</th><th>Formalizadas</th><th>Lead Time prom.</th><th>% SLA</th></tr></thead>
             <tbody>{serie.map((x) => (
               <tr key={x.mes}>
                 <td>{etiquetaMes(x.mes)}</td><td>{fmtNum(x.creadas)}</td><td>{fmtNum(x.formalizadas)}</td>
@@ -192,14 +201,14 @@ export default function Resumen() {
         </div>
       </div>
 
-      <LeadTimeMes idPais={pais.id_pais} sla={SLA_HH} />
+      <LeadTimeMes idPais={pais.id_pais} sla={SLA_HH} desde={mDesde} hasta={mHasta} tipo={tipo === TODOS ? '' : tipo} />
 
       <div className="preguntas">
         <h2>Preguntas y respuestas</h2>
         <div className="preguntas-grid">
           <div className="qa"><b>{`¿Cumplimos el SLA de ${SLA_HH} horas hábiles?`}</b>{`${fmtPct(formalizadas ? dentro / formalizadas : NaN)} de las formalizadas está dentro del SLA.`}</div>
           <div className="qa"><b>¿Qué pasa con las que no se formalizan?</b>{`De ${fmtNum(creadas)} solicitudes creadas, ${pc(formalizadas, creadas)} se formalizan, ${pc(noFormal('RECHAZADA'), creadas)} se rechazan, ${pc(noFormal('DESERCION'), creadas)} desisten y ${fmtNum(abiertas)} siguen abiertas.`}</div>
-          <div className="qa"><b>¿Cuánto tardamos en formalizar?</b>{mediana == null ? `La mediana supera ${SLA_HH} HH hábiles.` : `La mediana aproximada es de ${fmtHH(mediana)} hábiles; el 90% se formaliza en ${p90 == null ? `más de ${SLA_HH} HH` : fmtHH(p90)} o menos.`}</div>
+          <div className="qa"><b>¿Cuánto tardamos en formalizar?</b>{`El Lead Time promedio de formalización es ${fmtHH(formalizadas ? sumaHH / formalizadas : null)} hábiles; ${fmtPct(formalizadas ? hasta8 / formalizadas : NaN)} se formaliza en 8 HH o menos y el 90% en ${p90 == null ? `más de ${SLA_HH} HH` : fmtHH(p90)} o menos.`}</div>
         </div>
       </div>
     </div>

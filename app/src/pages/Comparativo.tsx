@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { sb } from '../lib/supabase'
+import { useContexto, mesDe, finDeMes } from '../lib/contexto'
+import { listaTipos, unificarTipo } from '../lib/tipos'
+import { ymd } from '../lib/fechas'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Comparativo regional: todos los países en una sola vista (overview e insights).
@@ -24,8 +27,7 @@ export default function Comparativo() {
   const [paises, setPaises] = useState<Pais[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [desde, setDesde] = useState('')
-  const [hasta, setHasta] = useState('')
+  const { periodo, setPeriodo } = useContexto()
   const [tipo, setTipo] = useState('')
 
   useEffect(() => {
@@ -44,11 +46,20 @@ export default function Comparativo() {
   }, [])
 
   const meses = useMemo(() => [...new Set(filas.map((f) => f.mes))].sort(), [filas])
-  const tipos = useMemo(() => [...new Set(filas.map((f) => f.tipo_solicitud))].sort(), [filas])
-  const mDesde = desde || meses[0] || ''
-  const mHasta = hasta || meses[meses.length - 1] || ''
+  const tipos = useMemo(() => listaTipos(filas.map((f) => f.tipo_solicitud)), [filas])
+  // Meses del periodo compartido, ajustados a los meses que tienen datos
+  const primero = meses[0] ?? ''
+  const ultimo = meses[meses.length - 1] ?? ''
+  const ajustar = (m: string) => (m < primero ? primero : m > ultimo ? ultimo : m)
+  const mDesde = ajustar(mesDe(periodo.desde))
+  const mHasta = ajustar(mesDe(periodo.hasta))
+  const cambiarDesde = (m: string) => setPeriodo({ desde: m, hasta: m > mesDe(periodo.hasta) ? finDeMes(m) : periodo.hasta })
+  const cambiarHasta = (m: string) => {
+    const fin = finDeMes(m) > ymd(new Date()) ? ymd(new Date()) : finDeMes(m)
+    setPeriodo({ desde: m < mesDe(periodo.desde) ? m : periodo.desde, hasta: fin })
+  }
   const f = useMemo(
-    () => filas.filter((x) => x.mes >= mDesde && x.mes <= mHasta && (!tipo || x.tipo_solicitud === tipo)),
+    () => filas.filter((x) => x.mes >= mDesde && x.mes <= mHasta && (!tipo || unificarTipo(x.tipo_solicitud) === tipo)),
     [filas, mDesde, mHasta, tipo],
   )
 
@@ -88,10 +99,10 @@ export default function Comparativo() {
   })
 
   // Tipo: promedio HH por tipo y país (mínimo 5 formalizadas)
-  const tiposF = [...new Set(f.map((x) => (x.tipo_solicitud === 'PERSONAL' ? 'NO ASALARIADO' : x.tipo_solicitud)))].sort()
+  const tiposF = listaTipos(f.map((x) => x.tipo_solicitud))
   const tipoTrazas = idsPaises.map((id) => {
     const y = tiposF.map((t) => {
-      const rows = f.filter((r) => r.id_pais === id && (r.tipo_solicitud === t || (t === 'NO ASALARIADO' && r.tipo_solicitud === 'PERSONAL')))
+      const rows = f.filter((r) => r.id_pais === id && unificarTipo(r.tipo_solicitud) === t)
       const a = agg(rows)
       return a.formal >= MIN_N ? a.prom : null
     })
@@ -119,19 +130,19 @@ export default function Comparativo() {
 
   return (
     <div className="resumen">
-      <Cabecera kicker="Comparativo regional" titulo="Todos los países, una sola mirada" sub="Overview e insights de Costa Rica, Panamá, Nicaragua y El Salvador. Tiempos solo de formalizadas." pose="prestamito_explicando" />
+      <Cabecera kicker="Comparativo regional" titulo="Todos los países, una sola mirada" sub="Panorama y hallazgos de Costa Rica, Panamá, Nicaragua y El Salvador. Lead Time solo de formalizadas." pose="prestamito_explicando" />
 
       <div className="filtros-resumen">
-        <label>Desde<select value={mDesde} onChange={(e) => setDesde(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
-        <label>Hasta<select value={mHasta} onChange={(e) => setHasta(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
+        <label>Desde<select value={mDesde} onChange={(e) => cambiarDesde(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
+        <label>Hasta<select value={mHasta} onChange={(e) => cambiarHasta(e.target.value)}>{meses.map((m) => <option key={m} value={m}>{etiquetaMes(m)}</option>)}</select></label>
         <label>Tipo de solicitud<select value={tipo} onChange={(e) => setTipo(e.target.value)}><option value="">Todos</option>{tipos.map((t) => <option key={t} value={t}>{t}</option>)}</select></label>
       </div>
 
-      <h2 className="seccion">Overview</h2>
+      <h2 className="seccion">Panorama</h2>
       <div className="kpis">
         <Kpi label="Solicitudes creadas (todos)" value={fmtNum(total.creadas)} foot={`${fmtNum(total.formal)} formalizadas`} tono="navy" />
         <Kpi label="Conversión regional" value={fmtPct(total.conv)} tono="verde" relleno />
-        <Kpi label="Promedio HH a formalizar" value={fmtHH(total.prom)} tono="cielo" />
+        <Kpi label="Lead Time promedio de formalización" value={fmtHH(total.prom)} tono="cielo" />
         <Kpi label={`Dentro del SLA (${SLA_HH} HH)`} value={fmtPct(total.sla)} tono="lima" />
       </div>
 
@@ -139,7 +150,7 @@ export default function Comparativo() {
         <h2>Comparativo por país</h2>
         <div className="tabla-scroll">
           <table>
-            <thead><tr><th>País</th><th>Creadas</th><th>Formalizadas</th><th>Conversión</th><th>Rechazo</th><th>Deserción</th><th>Promedio HH</th><th>% SLA</th></tr></thead>
+            <thead><tr><th>País</th><th>Creadas</th><th>Formalizadas</th><th>Conversión</th><th>Rechazo</th><th>Deserción</th><th>Lead Time prom.</th><th>% SLA</th></tr></thead>
             <tbody>{porPais.map((p) => (
               <tr key={p.id}><td><strong>{p.nombre}</strong></td><td>{fmtNum(p.creadas)}</td><td>{fmtNum(p.formal)}</td>
                 <td>{fmtPct(p.conv)}</td><td>{fmtPct(p.rech)}</td><td>{fmtPct(p.des)}</td><td>{fmtHH(p.prom)}</td><td>{fmtPct(p.sla)}</td></tr>
@@ -165,24 +176,24 @@ export default function Comparativo() {
         <Grafico height={320} data={resTrazas} layout={{ barmode: 'stack', yaxis: { tickformat: '.0%' } }} />
       </div>
 
-      <h2 className="seccion">Insights</h2>
+      <h2 className="seccion">Hallazgos</h2>
       <div className="grid-dos">
         <div className="tarjeta-seccion">
-          <h2>Lead time promedio por mes</h2>
-          <p className="sub">Horas hábiles promedio a formalización, por país (meses con {MIN_N}+ formalizadas)</p>
-          <Grafico height={320} data={leadTrazas} layout={{ xaxis: { dtick: 'M1', tickformat: '%b %Y' }, yaxis: { title: { text: 'HH' } }, shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: SLA_HH, y1: SLA_HH, line: { color: PALETA.gris, dash: 'dash' } }] }} />
+          <h2>Lead Time promedio de formalización por mes</h2>
+          <p className="sub">Horas hábiles promedio, por país (meses con {MIN_N}+ formalizadas)</p>
+          <Grafico height={320} data={leadTrazas} layout={{ xaxis: { dtick: 'M1', tickformat: '%b %Y' }, yaxis: { title: { text: 'Lead Time promedio (HH)' }, rangemode: 'tozero' }, shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: SLA_HH, y1: SLA_HH, line: { color: PALETA.gris, dash: 'dash' } }] }} />
         </div>
         <div className="tarjeta-seccion">
-          <h2>Horas hábiles a formalizar</h2>
-          <p className="sub">Participación de cada rango por país</p>
+          <h2>Lead Time de formalización por rango</h2>
+          <p className="sub">Participación de cada rango de horas hábiles por país</p>
           <Grafico height={320} data={rangosTrazas} layout={{ barmode: 'group', yaxis: { tickformat: '.0%' } }} />
         </div>
       </div>
 
       <div className="tarjeta-seccion">
-        <h2>Promedio HH por tipo de solicitud</h2>
+        <h2>Lead Time promedio por tipo de solicitud</h2>
         <p className="sub">Cada tipo por país (mínimo {MIN_N} formalizadas; PERSONAL se suma a NO ASALARIADO)</p>
-        <Grafico height={340} data={tipoTrazas} layout={{ barmode: 'group', yaxis: { title: { text: 'HH' } }, shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: SLA_HH, y1: SLA_HH, line: { color: PALETA.gris, dash: 'dash' } }] }} />
+        <Grafico height={340} data={tipoTrazas} layout={{ barmode: 'group', yaxis: { title: { text: 'Lead Time promedio (HH)' } }, shapes: [{ type: 'line', xref: 'paper', x0: 0, x1: 1, y0: SLA_HH, y1: SLA_HH, line: { color: PALETA.gris, dash: 'dash' } }] }} />
       </div>
     </div>
   )

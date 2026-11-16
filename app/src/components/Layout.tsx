@@ -2,6 +2,18 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { sb } from '../lib/supabase'
+import { periodoPorDefecto } from '../lib/fechas'
+import type { Periodo } from '../lib/contexto'
+
+// Periodo compartido entre páginas; se guarda en la sesión del navegador para sobrevivir a una recarga
+const CLAVE_PERIODO = 'tiempos.periodo'
+function periodoInicial(): Periodo {
+  try {
+    const p = JSON.parse(sessionStorage.getItem(CLAVE_PERIODO) ?? 'null')
+    if (p && /^\d{4}-\d{2}-\d{2}$/.test(p.desde) && /^\d{4}-\d{2}-\d{2}$/.test(p.hasta)) return p
+  } catch { /* sin almacenamiento: se usa el periodo por defecto */ }
+  return periodoPorDefecto()
+}
 
 const logo = `${import.meta.env.BASE_URL}brand/logo_claro.png`
 
@@ -9,7 +21,7 @@ const logo = `${import.meta.env.BASE_URL}brand/logo_claro.png`
 const SECCIONES = [
   { to: '/comparativo', titulo: 'Comparativo regional', listo: true },
   { to: '/resumen', titulo: 'Resumen', listo: true },
-  { to: '/insights', titulo: 'Insights', listo: true },
+  { to: '/hallazgos', titulo: 'Hallazgos', listo: true },
   { to: '/cuellos', titulo: 'Cuellos y reprocesos', listo: true },
   { to: '/abiertas', titulo: 'Abiertas y posibles errores', listo: true },
   { to: '/equipo', titulo: 'Equipo y DAC', listo: true },
@@ -21,6 +33,11 @@ export default function Layout() {
   const { perfil, paises, salir } = useAuth()
   const [elegido, setElegido] = useState<number | null>(null)
   const [resultado, setResultado] = useState<'EXITOSA' | 'TODOS'>('EXITOSA')
+  const [periodo, setPeriodoEstado] = useState<Periodo>(periodoInicial)
+  const setPeriodo = (p: Periodo) => {
+    setPeriodoEstado(p)
+    try { sessionStorage.setItem(CLAVE_PERIODO, JSON.stringify(p)) } catch { /* sin almacenamiento */ }
+  }
   const pais = paises.find((p) => p.id_pais === elegido) ?? paises[0]
   // SLA y roles DAC del país, tomados de Parámetros (valores por defecto mientras carga)
   const [params, setParams] = useState<{ sla: number; rolesDac: string[] }>({ sla: 24, rolesDac: ['DAC'] })
@@ -90,7 +107,7 @@ export default function Layout() {
             <p>Tu cuenta todavía no tiene acceso a ningún país. Pedí a un administrador que te lo asigne.</p>
           </div>
         ) : (
-          <Outlet context={{ pais, sla: params.sla, rolesDac: params.rolesDac, resultado }} />
+          <Outlet context={{ pais, sla: params.sla, rolesDac: params.rolesDac, resultado, periodo, setPeriodo }} />
         )}
       </main>
     </div>

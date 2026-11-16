@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useOutletContext } from 'react-router-dom'
 import { sb } from '../lib/supabase'
+import { unificarTipo } from '../lib/tipos'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
 
 // Consulta por solicitud: línea de tiempo de estados y detalle de movimientos (función consulta).
@@ -59,7 +60,7 @@ export default function Consulta() {
 
   return (
     <div className="resumen">
-      <Cabecera kicker="Consulta por solicitud" titulo="La historia completa de cada solicitud" sub="Línea de tiempo de una solicitud. Los estados posteriores a aprobado informa se muestran en gris: quedan fuera del tiempo a formalizar." pose="prestamito_leyendo" />
+      <Cabecera kicker="Consulta por solicitud" titulo="La historia completa de cada solicitud" sub="Línea de tiempo de una solicitud. Los estados posteriores a aprobado informa se muestran en gris: quedan fuera del Lead Time de formalización." pose="prestamito_leyendo" />
 
       <div className="filtros-resumen">
         <label>
@@ -86,7 +87,7 @@ export default function Consulta() {
             <thead><tr><th>Solicitud</th><th>Resultado</th><th>Estado actual</th><th>Tipo</th><th>Creación</th></tr></thead>
             <tbody>{dato.recientes.map((r) => (
               <tr key={r.solicitud} className="fila-enlace" onClick={() => { setTexto(String(r.solicitud)); setNumero(r.solicitud) }}>
-                <td>{r.solicitud}</td><td>{r.resultado}</td><td>{r.estado_actual}</td><td>{r.tipo}</td><td>{fmtFecha(r.creacion)}</td>
+                <td>{r.solicitud}</td><td>{r.resultado}</td><td>{r.estado_actual}</td><td>{unificarTipo(r.tipo)}</td><td>{fmtFecha(r.creacion)}</td>
               </tr>
             ))}</tbody>
           </table>
@@ -100,8 +101,8 @@ export default function Consulta() {
       {!cargando && s && (
         <>
           <div className="kpis">
-            <Kpi label="Resultado" value={s.resultado.replace('_', ' ')} foot={`${s.tipo} · ${s.promotor ?? ''}`} tono="verde" />
-            <Kpi label="A formalización" value={fmtH(s.leadtime_formalizado)} foot="horas hábiles hasta aprobado informa" tono="cielo" />
+            <Kpi label="Resultado" value={s.resultado.replace('_', ' ')} foot={`${unificarTipo(s.tipo)} · ${s.promotor ?? ''}`} tono="verde" />
+            <Kpi label="Lead Time de formalización" value={fmtH(s.leadtime_formalizado)} foot="horas hábiles hasta aprobado informa" tono="cielo" />
             <Kpi label="Horas hábiles en el análisis" value={s.solo_un_estado ? '—' : fmtH(s.hh_analisis)} foot={s.solo_un_estado ? 'un solo estado: no se mide' : ''} tono="navy" />
             <Kpi label="Tocada por DAC" value={s.tocada_dac ? 'Sí' : 'No'} foot={`${s.movs_dac} movimientos`} tono="naranja" />
           </div>
