@@ -6,3 +6,9 @@ dist/
 # Datos del DWH y credenciales nunca al repositorio
 Envir/
 *.ENV
+
+# Secretos y claves (nunca al repo)
+.env.*.local
+*.pem
+*.key
+*.p12
