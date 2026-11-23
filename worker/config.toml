@@ -1,0 +1,14 @@
+# Configuración del worker de Tiempos (sin secretos).
+# Las contraseñas están en el Administrador de credenciales de Windows, con el nombre indicado en "credencial".
+
+[dwh]
+server = 'SRV-TORTUGUERO\DATAWAREHOUSE'     # comillas simples: la barra invertida se toma literal
+database = "GENESIS_REGIONAL"
+driver = "ODBC Driver 18 for SQL Server"
+credencial = "tiempos_web_dwh"          # confirmar: nombre de la credencial del DWH en este equipo
+
+[supabase]
+host = "aws-1-us-west-2.pooler.supabase.com"             # host de la cadena de conexión de Supabase (botón Connect)
+port = 5432
+database = "postgres"
+credencial = "tiempos_web_supabase"          # la que creaste en el Administrador de credenciales
