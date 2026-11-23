@@ -4,6 +4,7 @@ import { fechaEs } from '../lib/fechas'
 import { useContexto } from '../lib/contexto'
 import { listaTipos, tiposConsulta } from '../lib/tipos'
 import { Cabecera, Kpi, Grafico, PALETA } from '../components/ui'
+import EquipoDac from '../components/EquipoDac'
 
 // Equipo y DAC. Cálculos en la base (función equipo).
 type Prod = { usuario: string; solicitudes: number; por_dia: number }
@@ -53,6 +54,12 @@ export default function Equipo() {
   const [canales, setCanales] = useState<string[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Subpáginas de Equipo y DAC: cada una muestra solo su parte, para no bajar tanto en la página
+  const [pestana, setPestana] = useState<'dac' | 'prod' | 'resp' | 'mes'>('dac')
+  // Filtro: false = todo lo DAC antes de formalización; true = solo analistas
+  const [soloAnalistas, setSoloAnalistas] = useState(false)
+  // Filtro de PENDIENTES del equipo DAC (por defecto: 0 o 1 pasos)
+  const [pend, setPend] = useState<'hasta_uno' | 'todas' | 'sin' | 'una' | 'dos_o_mas'>('hasta_uno')
 
   useEffect(() => {
     let vivo = true
@@ -115,8 +122,34 @@ export default function Equipo() {
 
       {cargando && !dato && <p className="cargando">Calculando Equipo y DAC de {pais.nombre}…</p>}
 
+      <div className="grupo-roles" role="tablist" aria-label="Subpáginas de Equipo y DAC">
+        <span className="etiqueta-roles">Ver</span>
+        {([['dac', 'Gestión DAC'], ['prod', 'Productividad'], ['resp', 'Respuesta mismo día'], ['mes', 'Mensual']] as const).map(([k, t]) => (
+          <button key={k} type="button" role="tab" aria-selected={pestana === k} className={pestana === k ? 'pestana activa' : 'pestana'} onClick={() => setPestana(k)}>{t}</button>
+        ))}
+      </div>
+
+      <div className="filtros-resumen">
+        <div className="grupo-roles">
+          <span className="etiqueta-roles">¿Quiénes?</span>
+          <button type="button" className={!soloAnalistas ? 'pestana activa' : 'pestana'} onClick={() => setSoloAnalistas(false)}>Todo el DAC</button>
+          <button type="button" className={soloAnalistas ? 'pestana activa' : 'pestana'} onClick={() => setSoloAnalistas(true)}>Solo analistas</button>
+        </div>
+        <div className="grupo-roles">
+          <span className="etiqueta-roles">¿Con cuántos PENDIENTES?</span>
+          {([['hasta_uno', 'Hasta 1'], ['todas', 'Todas'], ['sin', 'Ninguno'], ['una', 'Exactamente 1'], ['dos_o_mas', '2 o más']] as const).map(([k, t]) => (
+            <button key={k} type="button" className={pend === k ? 'pestana activa' : 'pestana'} onClick={() => setPend(k)}>{t}</button>
+          ))}
+        </div>
+      </div>
+
+      {(pestana === 'dac' || pestana === 'prod' || pestana === 'mes') && (
+        <EquipoDac idPais={pais.id_pais} desde={desde} hasta={hasta} parte={pestana} soloAnalistas={soloAnalistas} pend={pend} />
+      )}
+
       {dato && (
         <>
+          {pestana === 'prod' && <>
           <h2 className="seccion">Productividad del equipo</h2>
           <div className="filtros-resumen">
             <div className="grupo-roles">
@@ -152,6 +185,8 @@ export default function Equipo() {
             </>
           )}
 
+          </>}
+          {pestana === 'dac' && <>
           <h2 className="seccion">Gestión DAC</h2>
           {dato.dac_solicitudes_con === 0 ? (
             <div className="vacio"><h2>Ninguna solicitud del periodo pasó por DAC</h2><p>Revisá los roles DAC en Parámetros o ampliá el periodo.</p></div>
@@ -174,6 +209,8 @@ export default function Equipo() {
             </>
           )}
 
+          </>}
+          {pestana === 'resp' && <>
           <h2 className="seccion">Respuesta en el mismo día</h2>
           <p className="sub">Cada fila es una estadía: una vez que la solicitud estuvo en un estado. Mismo día = salió del estado el mismo día en que llegó.</p>
           <div className="filtros-resumen">
@@ -270,6 +307,7 @@ export default function Equipo() {
               )}
             </div>
           </div>
+          </>}
         </>
       )}
     </div>
