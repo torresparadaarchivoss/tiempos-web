@@ -88,7 +88,7 @@ def transformar(ciclo: pd.DataFrame, sol: pd.DataFrame, est: pd.DataFrame, usu: 
     c["usuario_modifica"] = c["id_usuario_modifica"].map(nombre_usu)
     c["id_pais"] = id_sb
 
-    s = sol.rename(columns=str.lower).copy()   # sin cliente: dato personal, fuera de alcance
+    s = sol.rename(columns=str.lower).drop(columns=["cliente"], errors="ignore")  # dato personal: nunca sale del DWH
     s["id_pais"] = id_sb
     s["creacion_posterior_a_primer_mov"] = 0
 
