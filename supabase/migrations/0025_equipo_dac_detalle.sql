@@ -1,7 +1,7 @@
 -- 0025_equipo_dac_detalle.sql
 -- Equipo DAC, detalle en Productividad por analista:
 --   a) Tiempo promedio por analista sin contar estados PENDIENTE (promedio por estadía, HH hábiles).
---   b) Teórico vs actual por analista: solicitudes teóricas = días hábiles × (9 HH ÷ tiempo óptimo) y diferencia.
+--   b) Teórico vs actual por analista DAC, diario: teórico = 9 HH ÷ tiempo óptimo; actual = solicitudes por día hábil.
 --   c) Asesores: pendientes generados por solicitud y rechazos (recepción y analista).
 -- Reemplaza equipo_dac de 0021 (misma firma). equipo_dac_mes no cambia.
 -- Definiciones:
@@ -133,8 +133,8 @@ optimo_hh as (   -- tiempo promedio de horas hábiles por estadía del equipo el
 prod_persona as (
     select d.usuario, d.rol, count(distinct d.solicitud) as solicitudes,
            round((count(distinct d.solicitud)::numeric / greatest((select n from dias_habiles), 1)), 2) as por_dia,
-           -- teórico: días hábiles × (9 HH ÷ tiempo óptimo); solo aplica a analistas DAC
-           case when d.rol = 'DAC' then round(((select n from dias_habiles) * 9 / nullif((select hh from optimo_hh), 0))::numeric, 1) end as teorico,
+           -- teórico diario: 9 HH ÷ tiempo óptimo (solicitudes por día hábil); solo aplica a analistas DAC
+           case when d.rol = 'DAC' then round((9 / nullif((select hh from optimo_hh), 0))::numeric, 2) end as teorico,
            (select l.promedio_hh_sin_pend from lt_persona l where l.usuario = d.usuario and l.rol = d.rol) as hh_sin_pend
     from dac d group by d.usuario, d.rol
 ),
@@ -165,7 +165,7 @@ select json_build_object(
   'flujo_dia_hora', coalesce((select json_agg(json_build_object('dia', dia, 'hora', hora, 'n', n)) from flujo_dia_hora), '[]'::json),
   'productividad', coalesce((select json_agg(json_build_object('usuario', usuario, 'rol', rol, 'solicitudes', solicitudes,
         'por_dia', por_dia, 'teorico', teorico,
-        'diferencia', case when teorico is not null then round((solicitudes - teorico)::numeric, 1) end,
+        'diferencia', case when teorico is not null then round((por_dia - teorico)::numeric, 2) end,
         'hh_sin_pend', hh_sin_pend) order by solicitudes desc) from prod_persona), '[]'::json),
   'asesores', coalesce((select json_agg(json_build_object('usuario', usuario, 'rol', rol, 'solicitudes', solicitudes,
         'pendientes', pendientes,

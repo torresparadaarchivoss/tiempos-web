@@ -149,14 +149,14 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
       {parte === 'prod' && <>
       <div className="tarjeta-seccion">
         <h2>Productividad por analista</h2>
-        <p className="sub">Solicitudes distintas por día hábil del periodo ({dato.dias_habiles} días). Teórico = días hábiles × (9 HH ÷ tiempo óptimo), solo analistas DAC</p>
+        <p className="sub">Solo analistas DAC. Solicitudes distintas por día hábil del periodo ({dato.dias_habiles} días). Teórico diario = 9 HH ÷ tiempo óptimo</p>
         <div className="tabla-scroll">
           <table>
-            <thead><tr><th>Usuario</th><th>Rol</th><th>Solicitudes</th><th>Por día hábil</th><th>Teórico</th><th>Diferencia</th><th>Promedio sin pendientes</th></tr></thead>
-            <tbody>{dato.productividad.map((p) => (
-              <tr key={p.usuario + p.rol}><td>{p.usuario}</td><td>{p.rol}</td><td>{nf(p.solicitudes)}</td><td>{p.por_dia.toFixed(2)}</td>
-                <td>{p.teorico == null ? '—' : nf(p.teorico)}</td>
-                <td>{p.diferencia == null ? '—' : `${p.diferencia > 0 ? '+' : ''}${nf(p.diferencia)}`}</td>
+            <thead><tr><th>Usuario</th><th>Solicitudes</th><th>Por día hábil</th><th>Teórico diario</th><th>Diferencia diaria</th><th>Promedio sin pendientes</th></tr></thead>
+            <tbody>{dato.productividad.filter((p) => p.rol === 'DAC').map((p) => (
+              <tr key={p.usuario}><td>{p.usuario}</td><td>{nf(p.solicitudes)}</td><td>{p.por_dia.toFixed(2)}</td>
+                <td>{p.teorico == null ? '—' : p.teorico.toFixed(2)}</td>
+                <td>{p.diferencia == null ? '—' : `${p.diferencia > 0 ? '+' : ''}${p.diferencia.toFixed(2)}`}</td>
                 <td>{hh(p.hh_sin_pend, 2)}</td></tr>
             ))}</tbody>
           </table>
