@@ -5,8 +5,9 @@ import { Kpi, Grafico, PALETA } from '../components/ui'
 // Sección DAC (función equipo_dac y equipo_dac_mes). Solo roles DAC; sin solicitudes de prueba;
 // solicitudes con a lo sumo un paso por PENDIENTES.
 type Res = { total: number; aprobadas: number; rechazadas: number; rech_recepcion: number; desercion: number; en_proceso: number }
-type PersonaLt = { usuario: string; rol: string; estadias: number; solicitudes: number; promedio_hh: number | null; horas: number }
-type Prod = { usuario: string; rol: string; solicitudes: number; por_dia: number }
+type PersonaLt = { usuario: string; rol: string; estadias: number; solicitudes: number; promedio_hh: number | null; horas: number; promedio_hh_sin_pend: number | null }
+type Prod = { usuario: string; rol: string; solicitudes: number; por_dia: number; teorico: number | null; diferencia: number | null; hh_sin_pend: number | null }
+type Asesor = { usuario: string; rol: string; solicitudes: number; pendientes: number; pend_por_solicitud: number | null; rech_recepcion: number; rech_recepcion_pct: number | null; rech_analista: number; rech_analista_pct: number | null }
 type DacDato = {
   dias_habiles: number
   resultados: Res
@@ -17,6 +18,7 @@ type DacDato = {
   flujo_dia_hora: { dia: number; hora: number; n: number }[]
   pendientes: { grupo: string; orden: number; n: number }[]
   productividad: Prod[]
+  asesores: Asesor[]
   capacidad: { hh_promedio_estadia: number | null; max_teorico_dia: number | null; max_observado_dia: number }
 }
 type Mes = { tiempos: { mes: string; promedio_dias: number | null; n: number }[]; productividad: { mes: string; solicitudes: number; personas: number }[] }
@@ -50,7 +52,7 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
       else {
         // Si la función en la base no trae algún campo (migración sin reaplicar), se usa lista vacía
         const d = data as Partial<DacDato>
-        setDato({ ...d, flujo_dia_hora: d.flujo_dia_hora ?? [], flujo_hora: d.flujo_hora ?? [], persona_lt: d.persona_lt ?? [], productividad: d.productividad ?? [], pendientes: d.pendientes ?? [] } as DacDato)
+        setDato({ ...d, flujo_dia_hora: d.flujo_dia_hora ?? [], flujo_hora: d.flujo_hora ?? [], persona_lt: d.persona_lt ?? [], productividad: d.productividad ?? [], asesores: d.asesores ?? [], pendientes: d.pendientes ?? [] } as DacDato)
       }
     })
     return () => { vivo = false }
@@ -147,12 +149,32 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
       {parte === 'prod' && <>
       <div className="tarjeta-seccion">
         <h2>Productividad por analista</h2>
-        <p className="sub">Solicitudes distintas por día hábil del periodo ({dato.dias_habiles} días)</p>
+        <p className="sub">Solicitudes distintas por día hábil del periodo ({dato.dias_habiles} días). Teórico = días hábiles × (9 HH ÷ tiempo óptimo), solo analistas DAC</p>
         <div className="tabla-scroll">
           <table>
-            <thead><tr><th>Usuario</th><th>Rol</th><th>Solicitudes</th><th>Por día hábil</th></tr></thead>
+            <thead><tr><th>Usuario</th><th>Rol</th><th>Solicitudes</th><th>Por día hábil</th><th>Teórico</th><th>Diferencia</th><th>Promedio sin pendientes</th></tr></thead>
             <tbody>{dato.productividad.map((p) => (
-              <tr key={p.usuario}><td>{p.usuario}</td><td>{p.rol}</td><td>{nf(p.solicitudes)}</td><td>{p.por_dia.toFixed(2)}</td></tr>
+              <tr key={p.usuario + p.rol}><td>{p.usuario}</td><td>{p.rol}</td><td>{nf(p.solicitudes)}</td><td>{p.por_dia.toFixed(2)}</td>
+                <td>{p.teorico == null ? '—' : nf(p.teorico)}</td>
+                <td>{p.diferencia == null ? '—' : `${p.diferencia > 0 ? '+' : ''}${nf(p.diferencia)}`}</td>
+                <td>{hh(p.hh_sin_pend, 2)}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <p className="sub">Promedio sin pendientes: horas hábiles por estadía en todos los estados, excepto PENDIENTE.</p>
+      </div>
+
+      <div className="tarjeta-seccion">
+        <h2>Asesores: pendientes y rechazos</h2>
+        <p className="sub">Quién mueve la solicitud. Pendientes generados = veces que la envió a PENDIENTE. Rechazos por solicitud, en recepción y por analista</p>
+        <div className="tabla-scroll">
+          <table>
+            <thead><tr><th>Usuario</th><th>Rol</th><th>Solicitudes</th><th>Pendientes generados</th><th>Pendientes por solicitud</th><th>Rechazo recepción</th><th>Rechazo analista</th></tr></thead>
+            <tbody>{dato.asesores.map((a) => (
+              <tr key={a.usuario + a.rol}><td>{a.usuario}</td><td>{a.rol}</td><td>{nf(a.solicitudes)}</td><td>{nf(a.pendientes)}</td>
+                <td>{a.pend_por_solicitud == null ? '—' : a.pend_por_solicitud.toFixed(2)}</td>
+                <td>{nf(a.rech_recepcion)} ({pct(a.rech_recepcion, a.solicitudes)})</td>
+                <td>{nf(a.rech_analista)} ({pct(a.rech_analista, a.solicitudes)})</td></tr>
             ))}</tbody>
           </table>
         </div>
