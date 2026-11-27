@@ -58,8 +58,8 @@ export default function Equipo() {
   const [pestana, setPestana] = useState<'dac' | 'prod' | 'resp' | 'mes'>('dac')
   // Filtro: false = todo lo DAC antes de formalización; true = solo analistas
   const [soloAnalistas, setSoloAnalistas] = useState(false)
-  // Filtro de PENDIENTES del equipo DAC (por defecto: ninguno)
-  const [pend, setPend] = useState<'hasta_uno' | 'todas' | 'sin' | 'una' | 'dos_o_mas'>('sin')
+  // Filtro de PENDIENTES del equipo DAC (por defecto: todas)
+  const [pend, setPend] = useState<'hasta_uno' | 'todas' | 'sin' | 'una' | 'dos_o_mas'>('todas')
 
   useEffect(() => {
     let vivo = true
@@ -144,7 +144,7 @@ export default function Equipo() {
       </div>
 
       {(pestana === 'dac' || pestana === 'prod' || pestana === 'mes') && (
-        <EquipoDac idPais={pais.id_pais} desde={desde} hasta={hasta} parte={pestana} soloAnalistas={soloAnalistas} pend={pend} />
+        <EquipoDac idPais={pais.id_pais} desde={desde} hasta={hasta} parte={pestana} soloAnalistas={soloAnalistas} pend={pend} tipo={tipo} canal={canal} />
       )}
 
       {dato && (

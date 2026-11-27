@@ -9,13 +9,18 @@
 --   Rechazo = movimiento con clase RECHAZADA. Recepción = estado que contiene RECEP; el resto es rechazo por analista.
 -- SECURITY INVOKER: aplica RLS del usuario.
 
+-- Firma nueva: se suman p_tipos y p_canales (filtros de la página Equipo y DAC)
+drop function if exists public.equipo_dac(smallint, date, date, boolean, text[], text);
+
 create or replace function public.equipo_dac(
     p_pais           smallint,
     p_desde          date,
     p_hasta          date,
     p_solo_analistas boolean default false,
     p_asociados      text[]  default array['DAC', 'JEFATURA DAC', 'OTRO'],
-    p_pend           text    default 'hasta_uno'
+    p_pend           text    default 'hasta_uno',
+    p_tipos          text[]  default null,   -- tipo de solicitud (null = todos)
+    p_canales        text[]  default null    -- canal del usuario que mueve (null = todos)
 )
 returns json
 language sql
@@ -30,6 +35,7 @@ with s as (
       and s.fecha_creacion::date between p_desde and p_hasta
       and coalesce(s.estado_final, '') not ilike '%PRUEBA%'
       and coalesce(s.tipo_solicitud, '') not ilike '%PRUEBA%'
+      and (p_tipos is null or s.tipo_solicitud = any(p_tipos))
 ),
 pc as (   -- veces que cada solicitud pasó por PENDIENTES
     select ce.solicitud, count(*) filter (where upper(ce.estado) like 'PENDIENTE%') as pend_veces
@@ -48,6 +54,7 @@ ce_b as (   -- movimientos antes de formalización
     join sb on sb.solicitud = c.solicitud
     left join public.usuario_operativo u on u.id_pais = c.id_pais and u.usuario = c.usuario_modifica
     where c.id_pais = p_pais and c.post_corte = 0 and c.usuario_modifica is not null
+      and (p_canales is null or coalesce(nullif(u.canal, ''), 'SIN CANAL') = any(p_canales))
 ),
 tocadas_b as (   -- solicitudes que tocó el equipo elegido (antes del filtro de PENDIENTES)
     select distinct solicitud from ce_b
@@ -185,7 +192,7 @@ select json_build_object(
 );
 $$;
 
-grant execute on function public.equipo_dac(smallint, date, date, boolean, text[], text) to authenticated;
-revoke execute on function public.equipo_dac(smallint, date, date, boolean, text[], text) from anon;
+grant execute on function public.equipo_dac(smallint, date, date, boolean, text[], text, text[], text[]) to authenticated;
+revoke execute on function public.equipo_dac(smallint, date, date, boolean, text[], text, text[], text[]) from anon;
 
 notify pgrst, 'reload schema';
