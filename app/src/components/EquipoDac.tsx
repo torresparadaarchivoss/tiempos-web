@@ -166,11 +166,11 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
 
       <div className="tarjeta-seccion">
         <h2>Asesores: pendientes y rechazos</h2>
-        <p className="sub">Quién mueve la solicitud. Pendientes generados = veces que la envió a PENDIENTE. Rechazos por solicitud, en recepción y por analista</p>
+        <p className="sub">Solo analistas DAC. Pendientes generados = veces que la envió a PENDIENTE. Rechazos por solicitud, en recepción y por analista</p>
         <div className="tabla-scroll">
           <table>
             <thead><tr><th>Usuario</th><th>Rol</th><th>Solicitudes</th><th>Pendientes generados</th><th>Pendientes por solicitud</th><th>Rechazo recepción</th><th>Rechazo analista</th></tr></thead>
-            <tbody>{dato.asesores.map((a) => (
+            <tbody>{dato.asesores.filter((a) => a.rol === 'DAC').map((a) => (
               <tr key={a.usuario + a.rol}><td>{a.usuario}</td><td>{a.rol}</td><td>{nf(a.solicitudes)}</td><td>{nf(a.pendientes)}</td>
                 <td>{a.pend_por_solicitud == null ? '—' : a.pend_por_solicitud.toFixed(2)}</td>
                 <td>{nf(a.rech_recepcion)} ({pct(a.rech_recepcion, a.solicitudes)})</td>
