@@ -39,7 +39,7 @@ const ASOCIADOS = ['DAC', 'JEFATURA DAC', 'OTRO']
 
 export type Pendientes = 'hasta_uno' | 'todas' | 'sin' | 'una' | 'dos_o_mas'
 
-export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, pend, tipo, canal }: { idPais: number; desde: string; hasta: string; parte: 'dac' | 'prod' | 'mes'; soloAnalistas: boolean; pend: Pendientes; tipo: string; canal: string }) {
+export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, pend, verif, tipo, canal }: { idPais: number; desde: string; hasta: string; parte: 'dac' | 'prod' | 'mes'; soloAnalistas: boolean; pend: Pendientes; verif: boolean; tipo: string; canal: string }) {
   const [dato, setDato] = useState<DacDato | null>(null)
   const [mes, setMes] = useState<Mes | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +47,7 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
 
   useEffect(() => {
     let vivo = true
-    sb.rpc('equipo_dac', { p_pais: idPais, p_desde: desde, p_hasta: hasta, p_solo_analistas: soloAnalistas, p_asociados: ASOCIADOS, p_pend: pend, p_tipos: tiposConsulta(tipo), p_canales: canal ? [canal] : null }).then(({ data, error: err }) => {
+    sb.rpc('equipo_dac', { p_pais: idPais, p_desde: desde, p_hasta: hasta, p_solo_analistas: soloAnalistas, p_asociados: ASOCIADOS, p_pend: pend, p_tipos: tiposConsulta(tipo), p_canales: canal ? [canal] : null, p_verif: verif }).then(({ data, error: err }) => {
       if (!vivo) return
       if (err) setError('No se pudo calcular el equipo DAC: ' + err.message)
       else {
@@ -57,7 +57,7 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
       }
     })
     return () => { vivo = false }
-  }, [idPais, desde, hasta, soloAnalistas, pend, tipo, canal])
+  }, [idPais, desde, hasta, soloAnalistas, pend, verif, tipo, canal])
 
   // Series mensuales: no dependen del periodo ni de los filtros de la página
   useEffect(() => {

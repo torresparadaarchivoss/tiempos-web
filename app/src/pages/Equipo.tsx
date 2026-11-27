@@ -60,6 +60,8 @@ export default function Equipo() {
   const [soloAnalistas, setSoloAnalistas] = useState(false)
   // Filtro de PENDIENTES del equipo DAC (por defecto: todas)
   const [pend, setPend] = useState<'hasta_uno' | 'todas' | 'sin' | 'una' | 'dos_o_mas'>('todas')
+  // VERIFICADOR MOTORIZADO: false = excluido del tiempo DAC (por defecto); en "Solo analistas" siempre se excluye
+  const [verif, setVerif] = useState(false)
 
   useEffect(() => {
     let vivo = true
@@ -141,10 +143,15 @@ export default function Equipo() {
             <button key={k} type="button" className={pend === k ? 'pestana activa' : 'pestana'} onClick={() => setPend(k)}>{t}</button>
           ))}
         </div>
+        <div className="grupo-roles">
+          <span className="etiqueta-roles">¿Verificador motorizado?</span>
+          <button type="button" className={!verif ? 'pestana activa' : 'pestana'} onClick={() => setVerif(false)}>Excluir</button>
+          <button type="button" className={verif ? 'pestana activa' : 'pestana'} onClick={() => setVerif(true)}>Incluir</button>
+        </div>
       </div>
 
       {(pestana === 'dac' || pestana === 'prod' || pestana === 'mes') && (
-        <EquipoDac idPais={pais.id_pais} desde={desde} hasta={hasta} parte={pestana} soloAnalistas={soloAnalistas} pend={pend} tipo={tipo} canal={canal} />
+        <EquipoDac idPais={pais.id_pais} desde={desde} hasta={hasta} parte={pestana} soloAnalistas={soloAnalistas} pend={pend} verif={verif} tipo={tipo} canal={canal} />
       )}
 
       {dato && (

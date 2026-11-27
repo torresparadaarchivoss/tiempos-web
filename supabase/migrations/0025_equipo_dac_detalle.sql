@@ -10,7 +10,7 @@
 -- SECURITY INVOKER: aplica RLS del usuario.
 
 -- Firma nueva: se suman p_tipos y p_canales (filtros de la página Equipo y DAC)
-drop function if exists public.equipo_dac(smallint, date, date, boolean, text[], text);
+drop function if exists public.equipo_dac(smallint, date, date, boolean, text[], text, text[], text[]);
 
 create or replace function public.equipo_dac(
     p_pais           smallint,
@@ -20,7 +20,8 @@ create or replace function public.equipo_dac(
     p_asociados      text[]  default array['DAC', 'JEFATURA DAC', 'OTRO'],
     p_pend           text    default 'hasta_uno',
     p_tipos          text[]  default null,   -- tipo de solicitud (null = todos)
-    p_canales        text[]  default null    -- canal del usuario que mueve (null = todos)
+    p_canales        text[]  default null,   -- canal del usuario que mueve (null = todos)
+    p_verif          boolean default false   -- true = contar VERIFICADOR MOTORIZADO en Todo el DAC; en Solo analistas siempre se excluye
 )
 returns json
 language sql
@@ -83,6 +84,7 @@ dac as (   -- movimientos del equipo elegido dentro de la base
     select ce_b.* from ce_b
     join sf on sf.solicitud = ce_b.solicitud
     where ce_b.rol = any(case when p_solo_analistas then array['DAC'] else p_asociados end)
+      and ((p_verif and not p_solo_analistas) or upper(ce_b.estado) not like 'VERIFICADOR MOTORIZADO%')
 ),
 tocadas as (select distinct solicitud from dac),
 sd as (select sf.* from sf where sf.solicitud in (select solicitud from tocadas)),
@@ -192,7 +194,7 @@ select json_build_object(
 );
 $$;
 
-grant execute on function public.equipo_dac(smallint, date, date, boolean, text[], text, text[], text[]) to authenticated;
-revoke execute on function public.equipo_dac(smallint, date, date, boolean, text[], text, text[], text[]) from anon;
+grant execute on function public.equipo_dac(smallint, date, date, boolean, text[], text, text[], text[], boolean) to authenticated;
+revoke execute on function public.equipo_dac(smallint, date, date, boolean, text[], text, text[], text[], boolean) from anon;
 
 notify pgrst, 'reload schema';
