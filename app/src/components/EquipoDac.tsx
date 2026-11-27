@@ -19,7 +19,7 @@ type DacDato = {
   pendientes: { grupo: string; orden: number; n: number }[]
   productividad: Prod[]
   asesores: Asesor[]
-  capacidad: { hh_promedio_estadia: number | null; max_teorico_dia: number | null; max_observado_dia: number }
+  capacidad: { hh_promedio_estadia: number | null; minutos_optimos: number | null; max_teorico_dia: number | null; max_observado_dia: number }
 }
 type Mes = { tiempos: { mes: string; promedio_dias: number | null; n: number }[]; productividad: { mes: string; solicitudes: number; personas: number }[] }
 
@@ -147,6 +147,11 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
 
       </>}
       {parte === 'prod' && <>
+      <div className="kpis">
+        <Kpi label="Minutos óptimos por solicitud" value={dato.capacidad.minutos_optimos != null ? `${dato.capacidad.minutos_optimos.toFixed(1)} min` : '—'} foot="promedio por movimiento DAC, sin PENDIENTE" tono="verde" />
+        <Kpi label="Teórico diario por analista" value={dato.capacidad.max_teorico_dia?.toFixed(2) ?? '—'} foot="solicitudes: 540 min ÷ minutos óptimos" tono="navy" />
+        <Kpi label="Máximo observado en un día" value={dato.capacidad.max_observado_dia} foot="solicitudes distintas, un analista, un día" tono="naranja" />
+      </div>
       <div className="tarjeta-seccion">
         <h2>Productividad por analista</h2>
         <p className="sub">Solo analistas DAC. Solicitudes distintas por día hábil del periodo ({dato.dias_habiles} días). Teórico diario = 9 HH ÷ tiempo óptimo</p>
@@ -177,15 +182,6 @@ export default function EquipoDac({ idPais, desde, hasta, parte, soloAnalistas, 
                 <td>{nf(a.rech_analista)} ({pct(a.rech_analista, a.solicitudes)})</td></tr>
             ))}</tbody>
           </table>
-        </div>
-      </div>
-
-      <div className="tarjeta-seccion">
-        <h2>Capacidad por analista</h2>
-        <div className="kpis">
-          <Kpi label="Tiempo promedio por estadía" value={hh(dato.capacidad.hh_promedio_estadia, 2)} foot="promedio de horas hábiles por estadía DAC" tono="verde" />
-          <Kpi label="Máximo teórico por día" value={dato.capacidad.max_teorico_dia?.toFixed(1) ?? '—'} foot="solicitudes: 9 HH ÷ tiempo óptimo" tono="navy" />
-          <Kpi label="Máximo observado en un día" value={dato.capacidad.max_observado_dia} foot="solicitudes distintas, un analista, un día" tono="naranja" />
         </div>
       </div>
 

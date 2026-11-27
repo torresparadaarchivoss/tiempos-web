@@ -127,8 +127,9 @@ dias_habiles as (
     select count(*) as n from generate_series(p_desde::timestamp, p_hasta::timestamp, interval '1 day') d
     where extract(isodow from d) < 6 and not exists (select 1 from public.asueto a where a.id_pais = p_pais and a.fecha = d::date)
 ),
-optimo_hh as (   -- tiempo promedio de horas hábiles por estadía del equipo elegido
-    select avg(horas_habiles) as hh from dac where horas_habiles > 0
+optimo_hh as (   -- tiempo óptimo: promedio de HH por movimiento, sin PENDIENTE y con HH > 0
+    select avg(horas_habiles) as hh from dac
+    where horas_habiles > 0 and upper(estado) not like 'PENDIENTE%'
 ),
 prod_persona as (
     select d.usuario, d.rol, count(distinct d.solicitud) as solicitudes,
@@ -177,7 +178,8 @@ select json_build_object(
       ) order by (pendientes::numeric / nullif(solicitudes, 0)) desc nulls last) from ases), '[]'::json),
   'capacidad', json_build_object(
         'hh_promedio_estadia', (select round(hh::numeric, 2) from optimo_hh),
-        'max_teorico_dia', (select round((9 / nullif(hh, 0))::numeric, 1) from optimo_hh),
+        'minutos_optimos', (select round((hh * 60)::numeric, 1) from optimo_hh),
+        'max_teorico_dia', (select round((9 / nullif(hh, 0))::numeric, 2) from optimo_hh),
         'max_observado_dia', (select coalesce(max(n), 0) from max_dia)),
   'pendientes', coalesce((select json_agg(json_build_object('grupo', grupo, 'orden', orden, 'n', n) order by orden) from grupos_pend), '[]'::json)
 );
